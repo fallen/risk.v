@@ -4,7 +4,7 @@ reg clk, rst;
 wire [31:0] mem_i_addr;
 wire        mem_i_rstrb;
 wire [31:0] mem_i_rdata;
-wire        mem_i_rbusy;
+wire        mem_i_rbusy = 0;
 wire [31:0] mem_i_wdata = 0;
 wire [3:0]  mem_i_wmask = 0;
 wire        mem_i_wstrb = 0;
@@ -16,8 +16,10 @@ wire [3:0]  mem_d_wmask;
 wire        mem_d_wstrb;
 wire        mem_d_rstrb;
 wire [31:0] mem_d_rdata;
-wire        mem_d_rbusy;
-wire        mem_d_wbusy;
+wire        mem_d_rbusy = 0;
+wire        mem_d_wbusy = 0;
+
+wire [31:0] reset_pc = 32'b0;
 
 rv32i cpu (rst, clk,
 	   mem_i_addr,
@@ -31,7 +33,8 @@ rv32i cpu (rst, clk,
 	   mem_d_rstrb,
 	   mem_d_rdata,
 	   mem_d_rbusy,
-	   mem_d_wbusy);
+	   mem_d_wbusy,
+	   reset_pc);
 
 ram rom(rst, clk,
 	mem_i_addr,

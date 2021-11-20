@@ -13,10 +13,13 @@ output        mem_d_wstrb,
 output        mem_d_rstrb,
 input  [31:0] mem_d_rdata,
 input         mem_d_rbusy,
-input         mem_d_wbusy
+input         mem_d_wbusy,
+input  [31:0] externalResetVector
 );
 reg [31:0] regfile [0:31];
 reg [31:0] pc;
+
+wire pipeline_freeze;
 
 reg [5:0]   state;
 wire        f_en, d_en, x_en, m_en, w_en;
@@ -32,12 +35,13 @@ parameter MEMORY = 1 << 3;
 parameter WRITE_BACK = 1 << 4;
 
 /* fetch */
-assign mem_i_rstrb = 1;
+assign mem_i_rstrb = f_en;
 assign mem_i_addr = pc;
 reg [31:0]  f_addr;
 wire [31:0] f_insn;
 
 assign f_insn = mem_i_rdata;
+assign pipeline_freeze = mem_d_rbusy | mem_d_wbusy | mem_i_rbusy;
 
 always @(posedge clk) begin if (f_en) begin
 	$display("fetching pc = %x", pc);
@@ -248,7 +252,7 @@ integer i;
 always @(posedge clk) begin
 	if (rst) begin
 		state <= FETCH_INSN;
-		pc <= 0;
+		pc <= externalResetVector;
 		d_opcode <= 0;
 		d_op_val1 <= 0;
 		d_op_val2 <= 0;
@@ -262,7 +266,8 @@ always @(posedge clk) begin
 		x_out <= 0;
 		for (i = 0; i < 32; i = i + 1) regfile[i] <= 0;
 	end else begin
-		state <= (state << 1) | w_en;
+		if (~pipeline_freeze)
+			state <= (state << 1) | w_en;
 	end
 end
 endmodule
