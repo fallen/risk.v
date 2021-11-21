@@ -35,10 +35,10 @@ PCF = orangecrab_r0.2.pcf
 
 %.elf: %.s
 %.elf: %.S
-	$(CC) -march=rv32i -mabi=ilp32 -nostdlib $^ -o $@
+	$(CC) -march=rv32i -mabi=ilp32 -nostdlib -T linker.ld $^ -o $@
 
 %.bin: %.elf
-	$(OBJCOPY) -j .text -O binary $^ $@ && truncate -s %4 $@ && $(OBJCOPY) -I binary --reverse-bytes=4 $@
+	$(OBJCOPY) -O binary $^ $@ && truncate -s %4 $@ && $(OBJCOPY) -I binary --reverse-bytes=4 $@
 
 %.hex: %.bin
 	xxd -c4 $< | sed 's/[0-9a-fA-F]\+: //; s/ //; s/\(........\).*/\1/' >$@
