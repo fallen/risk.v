@@ -13,6 +13,12 @@ synth: top.bit
 flash: top.dfu
 	dfu-util -a 0 -D $^
 
+litex.vcd: litex
+	./litex
+
+litex: cpu.v gsd_orangecrab.v hello_world.hex riskv_standard_wb.v decode.v
+	iverilog cpu.v gsd_orangecrab.v riskv_standard_wb.v decode.v -o $@
+
 cpu.vcd: a.out
 	./a.out
 
