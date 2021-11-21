@@ -81,6 +81,7 @@ SECTIONS
 	{
 		*(.eh_frame)
 		*(.comment)
+		*(.note*)
 	}
 }
 

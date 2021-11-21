@@ -16,7 +16,10 @@ flash: top.dfu
 litex.vcd: litex
 	./litex
 
-litex: cpu.v gsd_orangecrab.v hello_world.hex riskv_standard_wb.v decode.v
+mem.init: hello_world.hex
+	cp $^ $@
+
+litex: cpu.v gsd_orangecrab.v hello_world.hex riskv_standard_wb.v decode.v mem.init
 	iverilog cpu.v gsd_orangecrab.v riskv_standard_wb.v decode.v -o $@
 
 cpu.vcd: a.out
@@ -41,7 +44,7 @@ PCF = orangecrab_r0.2.pcf
 
 %.elf: %.s
 %.elf: %.S
-	$(CC) -march=rv32i -mabi=ilp32 -nostdlib -T linker.ld $^ -o $@
+	$(CC) -static -march=rv32i -mabi=ilp32 -nostdlib -T linker.ld $^ -o $@
 
 %.bin: %.elf
 	$(OBJCOPY) -O binary $^ $@ && truncate -s %4 $@ && $(OBJCOPY) -I binary --reverse-bytes=4 $@
