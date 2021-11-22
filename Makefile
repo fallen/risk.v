@@ -13,6 +13,11 @@ synth: top.bit
 flash: top.dfu
 	dfu-util -a 0 -D $^
 
+runtest: $(TESTFILE).hex
+	cp $(TESTFILE).hex mem.init
+	iverilog cpu.v gsd_orangecrab.v riskv_standard_wb.v decode.v -o litex
+	./litex
+
 litex.vcd: litex
 	./litex
 

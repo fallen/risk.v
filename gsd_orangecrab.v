@@ -49,7 +49,7 @@ begin
 #3 sys_rst = 0;
 #3 sys_usb_rst = 0;
 //#964
-#1000
+#10000
 $finish;
 end
 
@@ -18836,6 +18836,18 @@ Riskv Riskv(
 	.iBusWishbone_SEL(basesoc_ibus_sel),
 	.iBusWishbone_STB(basesoc_ibus_stb)
 );
+
+always @(posedge sys_clk) begin
+	if ((basesoc_dbus_adr == 30'h32bfb2bf) && basesoc_dbus_cyc && basesoc_dbus_stb && basesoc_dbus_we) begin
+		if (basesoc_dbus_dat_w[0] == 1'b1) begin
+//			$display("test failed");
+			$error("test failed");
+		end else begin
+			$display("test succeeded!");
+		end
+		$finish;
+	end
+end
 
 
 //------------------------------------------------------------------------------
