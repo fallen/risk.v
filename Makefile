@@ -13,8 +13,9 @@ synth: top.bit
 flash: top.dfu
 	dfu-util -a 0 -D $^
 
-runtest: $(TESTFILE).hex
-	cp $(TESTFILE).hex mem.init
+runtest: $(TESTFILE).hex $(TESTFILE)_data.hex
+	cp $(TESTFILE).hex mem.init # ROM code (.text .rodata) starting @ 0x0
+	cp $(TESTFILE)_data.hex mem_1.init # SRAM data (.data .bss) starting @ 0x01000000
 	iverilog cpu.v gsd_orangecrab.v riskv_standard_wb.v decode.v -o litex
 	./litex
 
@@ -52,7 +53,13 @@ PCF = orangecrab_r0.2.pcf
 	$(CC) -static -march=rv32i -mabi=ilp32 -nostdlib -T linker.ld $^ -o $@
 
 %.bin: %.elf
-	$(OBJCOPY) -O binary $^ $@ && truncate -s %4 $@ && $(OBJCOPY) -I binary --reverse-bytes=4 $@
+	$(OBJCOPY) -O binary -j '.text.*' -j .text -j .rodata $^ $@ && truncate -s %4 $@ && $(OBJCOPY) -I binary --reverse-bytes=4 $@
+
+%_data.hex: %
+	$(OBJCOPY) -O binary -j .data -j .bss $^ $@.tmp || true > /dev/null 2>&1
+	truncate -s %4 $@.tmp
+	$(OBJCOPY) -I binary --reverse-bytes=4 $@.tmp || true > /dev/null 2>&1
+	xxd -c4 $@.tmp | sed 's/[0-9a-fA-F]\+: //; s/ //; s/\(........\).*/\1/' >$@
 
 %.hex: %.bin
 	xxd -c4 $< | sed 's/[0-9a-fA-F]\+: //; s/ //; s/\(........\).*/\1/' >$@
