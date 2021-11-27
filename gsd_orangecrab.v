@@ -9,7 +9,7 @@
 // Filename   : gsd_orangecrab.v
 // Device     : LFE5U-85F-8MG285C
 // LiteX sha1 : --------
-// Date       : 2021-11-22 15:46:21
+// Date       : 2021-11-27 00:27:36
 //------------------------------------------------------------------------------
 
 
@@ -48,8 +48,7 @@ initial
 begin
 #3 sys_rst = 0;
 #3 sys_usb_rst = 0;
-//#964
-#10000
+#700000
 $finish;
 end
 
@@ -79,6 +78,7 @@ reg  basesoc_bus_errors_re = 1'd0;
 wire basesoc_bus_error;
 reg  [31:0] basesoc_bus_errors = 32'd0;
 wire basesoc_reset;
+reg  [31:0] basesoc_interrupt = 32'd0;
 wire [29:0] basesoc_ibus_adr;
 reg  [31:0] basesoc_ibus_dat_w = 32'd0;
 wire [31:0] basesoc_ibus_dat_r;
@@ -2729,6 +2729,11 @@ assign crg_stop = ddrphy_stop0;
 assign crg_reset = ddrphy_reset0;
 assign crg_rst = basesoc_soc_rst;
 assign basesoc_bus_error = error;
+always @(*) begin
+	basesoc_interrupt <= 32'd0;
+	basesoc_interrupt[1] <= basesoc_timer_irq;
+	basesoc_interrupt[0] <= basesoc_cdcusb_irq;
+end
 assign basesoc_bus_errors_status = basesoc_bus_errors;
 assign basesoc_basesoc_adr = basesoc_basesoc_ram_bus_adr[14:0];
 assign basesoc_basesoc_ram_bus_dat_r = basesoc_basesoc_dat_r;
@@ -2779,44 +2784,6 @@ assign basesoc_cdcusb_cdcusbphy_configured = (basesoc_cdcusb_cdcusbphy_configure
 assign basesoc_cdcusb_cdcusbphy_wRequestAndType = basesoc_cdcusb_cdcusbphy_usbPacket[31:16];
 assign basesoc_cdcusb_cdcusbphy_wValue = basesoc_cdcusb_cdcusbphy_usbPacket[15:0];
 always @(*) begin
-	basesoc_cdcusb_cdcusbphy_response_addr <= 9'd0;
-	case (basesoc_cdcusb_cdcusbphy_usbPacket)
-		20'd590080: begin
-			basesoc_cdcusb_cdcusbphy_response_addr <= 8'd212;
-		end
-		32'd2147483648: begin
-			basesoc_cdcusb_cdcusbphy_response_addr <= 8'd210;
-		end
-		32'd2147876865: begin
-			basesoc_cdcusb_cdcusbphy_response_addr <= 6'd63;
-		end
-		32'd2147876866: begin
-			basesoc_cdcusb_cdcusbphy_response_addr <= 1'd1;
-		end
-		32'd2147876867: begin
-			basesoc_cdcusb_cdcusbphy_response_addr <= 7'd81;
-		end
-		32'd2147876879: begin
-			basesoc_cdcusb_cdcusbphy_response_addr <= 7'd123;
-		end
-		32'd2147877123: begin
-			basesoc_cdcusb_cdcusbphy_response_addr <= 7'd85;
-		end
-		32'd2147877379: begin
-			basesoc_cdcusb_cdcusbphy_response_addr <= 7'd93;
-		end
-		32'd2147937795: begin
-			basesoc_cdcusb_cdcusbphy_response_addr <= 8'd152;
-		end
-		32'd2703294464: begin
-			basesoc_cdcusb_cdcusbphy_response_addr <= 8'd212;
-		end
-		32'd3229483008: begin
-			basesoc_cdcusb_cdcusbphy_response_addr <= 8'd170;
-		end
-	endcase
-end
-always @(*) begin
 	basesoc_cdcusb_cdcusbphy_response_len <= 6'd0;
 	case (basesoc_cdcusb_cdcusbphy_usbPacket)
 		20'd590080: begin
@@ -2851,6 +2818,44 @@ always @(*) begin
 		end
 		32'd3229483008: begin
 			basesoc_cdcusb_cdcusbphy_response_len <= 6'd40;
+		end
+	endcase
+end
+always @(*) begin
+	basesoc_cdcusb_cdcusbphy_response_addr <= 9'd0;
+	case (basesoc_cdcusb_cdcusbphy_usbPacket)
+		20'd590080: begin
+			basesoc_cdcusb_cdcusbphy_response_addr <= 8'd212;
+		end
+		32'd2147483648: begin
+			basesoc_cdcusb_cdcusbphy_response_addr <= 8'd210;
+		end
+		32'd2147876865: begin
+			basesoc_cdcusb_cdcusbphy_response_addr <= 6'd63;
+		end
+		32'd2147876866: begin
+			basesoc_cdcusb_cdcusbphy_response_addr <= 1'd1;
+		end
+		32'd2147876867: begin
+			basesoc_cdcusb_cdcusbphy_response_addr <= 7'd81;
+		end
+		32'd2147876879: begin
+			basesoc_cdcusb_cdcusbphy_response_addr <= 7'd123;
+		end
+		32'd2147877123: begin
+			basesoc_cdcusb_cdcusbphy_response_addr <= 7'd85;
+		end
+		32'd2147877379: begin
+			basesoc_cdcusb_cdcusbphy_response_addr <= 7'd93;
+		end
+		32'd2147937795: begin
+			basesoc_cdcusb_cdcusbphy_response_addr <= 8'd152;
+		end
+		32'd2703294464: begin
+			basesoc_cdcusb_cdcusbphy_response_addr <= 8'd212;
+		end
+		32'd3229483008: begin
+			basesoc_cdcusb_cdcusbphy_response_addr <= 8'd170;
 		end
 	endcase
 end
@@ -2935,6 +2940,19 @@ assign basesoc_cdcusb_cdcusbphy_outhandler_done2 = basesoc_cdcusb_cdcusbphy_outh
 assign basesoc_cdcusb_cdcusbphy_address_reset = basesoc_cdcusb_cdcusbphy_usb_core_usb_reset;
 assign basesoc_cdcusb_cdcusbphy_setuphandler_usb_reset = basesoc_cdcusb_cdcusbphy_usb_core_usb_reset;
 always @(*) begin
+	basesoc_cdcusb_cdcusbphy_csrfield_out <= 1'd0;
+	if (basesoc_cdcusb_cdcusbphy_setuphandler_reset_pending) begin
+	end else begin
+		if (basesoc_cdcusb_cdcusbphy_in_next) begin
+		end else begin
+			if (basesoc_cdcusb_cdcusbphy_out_next) begin
+				basesoc_cdcusb_cdcusbphy_csrfield_out <= basesoc_cdcusb_cdcusbphy_out_next;
+			end else begin
+			end
+		end
+	end
+end
+always @(*) begin
 	basesoc_cdcusb_cdcusbphy_csrfield_setup <= 1'd0;
 	if (basesoc_cdcusb_cdcusbphy_setuphandler_reset_pending) begin
 	end else begin
@@ -2963,19 +2981,6 @@ always @(*) begin
 		if (basesoc_cdcusb_cdcusbphy_in_next) begin
 			basesoc_cdcusb_cdcusbphy_csrfield_in <= 1'd1;
 		end else begin
-		end
-	end
-end
-always @(*) begin
-	basesoc_cdcusb_cdcusbphy_csrfield_out <= 1'd0;
-	if (basesoc_cdcusb_cdcusbphy_setuphandler_reset_pending) begin
-	end else begin
-		if (basesoc_cdcusb_cdcusbphy_in_next) begin
-		end else begin
-			if (basesoc_cdcusb_cdcusbphy_out_next) begin
-				basesoc_cdcusb_cdcusbphy_csrfield_out <= basesoc_cdcusb_cdcusbphy_out_next;
-			end else begin
-			end
 		end
 	end
 end
@@ -3273,6 +3278,26 @@ always @(*) begin
 	endcase
 end
 always @(*) begin
+	basesoc_cdcusb_cdcusbphy_usb_core_tx_bitstuff_stuff_bit <= 1'd0;
+	case (csrtransform_resetinserter_state)
+		1'd1: begin
+		end
+		2'd2: begin
+		end
+		2'd3: begin
+		end
+		3'd4: begin
+		end
+		3'd5: begin
+		end
+		3'd6: begin
+			basesoc_cdcusb_cdcusbphy_usb_core_tx_bitstuff_stuff_bit <= 1'd1;
+		end
+		default: begin
+		end
+	endcase
+end
+always @(*) begin
 	basesoc_cdcusb_cdcusbphy_usb_core_tx_bitstuff_o_will_stall <= 1'd0;
 	case (csrtransform_resetinserter_state)
 		1'd1: begin
@@ -3290,26 +3315,6 @@ always @(*) begin
 			end
 		end
 		3'd6: begin
-		end
-		default: begin
-		end
-	endcase
-end
-always @(*) begin
-	basesoc_cdcusb_cdcusbphy_usb_core_tx_bitstuff_stuff_bit <= 1'd0;
-	case (csrtransform_resetinserter_state)
-		1'd1: begin
-		end
-		2'd2: begin
-		end
-		2'd3: begin
-		end
-		3'd4: begin
-		end
-		3'd5: begin
-		end
-		3'd6: begin
-			basesoc_cdcusb_cdcusbphy_usb_core_tx_bitstuff_stuff_bit <= 1'd1;
 		end
 		default: begin
 		end
@@ -3370,6 +3375,29 @@ always @(*) begin
 	endcase
 end
 always @(*) begin
+	basesoc_cdcusb_cdcusbphy_usb_core_tx_nrzi_oe0 <= 1'd0;
+	case (csrtransform_txnrziencoder_state)
+		1'd1: begin
+			basesoc_cdcusb_cdcusbphy_usb_core_tx_nrzi_oe0 <= 1'd1;
+		end
+		2'd2: begin
+			basesoc_cdcusb_cdcusbphy_usb_core_tx_nrzi_oe0 <= 1'd1;
+		end
+		2'd3: begin
+			basesoc_cdcusb_cdcusbphy_usb_core_tx_nrzi_oe0 <= 1'd1;
+		end
+		3'd4: begin
+			basesoc_cdcusb_cdcusbphy_usb_core_tx_nrzi_oe0 <= 1'd1;
+		end
+		3'd5: begin
+			basesoc_cdcusb_cdcusbphy_usb_core_tx_nrzi_oe0 <= 1'd1;
+		end
+		default: begin
+			basesoc_cdcusb_cdcusbphy_usb_core_tx_nrzi_oe0 <= 1'd0;
+		end
+	endcase
+end
+always @(*) begin
 	basesoc_cdcusb_cdcusbphy_usb_core_tx_nrzi_usbp <= 1'd0;
 	case (csrtransform_txnrziencoder_state)
 		1'd1: begin
@@ -3412,29 +3440,6 @@ always @(*) begin
 		end
 		default: begin
 			basesoc_cdcusb_cdcusbphy_usb_core_tx_nrzi_usbn <= 1'd0;
-		end
-	endcase
-end
-always @(*) begin
-	basesoc_cdcusb_cdcusbphy_usb_core_tx_nrzi_oe0 <= 1'd0;
-	case (csrtransform_txnrziencoder_state)
-		1'd1: begin
-			basesoc_cdcusb_cdcusbphy_usb_core_tx_nrzi_oe0 <= 1'd1;
-		end
-		2'd2: begin
-			basesoc_cdcusb_cdcusbphy_usb_core_tx_nrzi_oe0 <= 1'd1;
-		end
-		2'd3: begin
-			basesoc_cdcusb_cdcusbphy_usb_core_tx_nrzi_oe0 <= 1'd1;
-		end
-		3'd4: begin
-			basesoc_cdcusb_cdcusbphy_usb_core_tx_nrzi_oe0 <= 1'd1;
-		end
-		3'd5: begin
-			basesoc_cdcusb_cdcusbphy_usb_core_tx_nrzi_oe0 <= 1'd1;
-		end
-		default: begin
-			basesoc_cdcusb_cdcusbphy_usb_core_tx_nrzi_oe0 <= 1'd0;
 		end
 	endcase
 end
@@ -3816,6 +3821,22 @@ always @(*) begin
 	endcase
 end
 always @(*) begin
+	basesoc_cdcusb_cdcusbphy_usb_core_rx_line_state_se00 <= 1'd0;
+	case (csrtransform_rxpipeline_state)
+		1'd1: begin
+		end
+		2'd2: begin
+		end
+		2'd3: begin
+			basesoc_cdcusb_cdcusbphy_usb_core_rx_line_state_se00 <= 1'd1;
+		end
+		3'd4: begin
+		end
+		default: begin
+		end
+	endcase
+end
+always @(*) begin
 	basesoc_cdcusb_cdcusbphy_usb_core_rx_line_state_se10 <= 1'd0;
 	case (csrtransform_rxpipeline_state)
 		1'd1: begin
@@ -3872,22 +3893,6 @@ always @(*) begin
 			basesoc_cdcusb_cdcusbphy_usb_core_rx_line_state_dk0 <= 1'd1;
 		end
 		2'd3: begin
-		end
-		3'd4: begin
-		end
-		default: begin
-		end
-	endcase
-end
-always @(*) begin
-	basesoc_cdcusb_cdcusbphy_usb_core_rx_line_state_se00 <= 1'd0;
-	case (csrtransform_rxpipeline_state)
-		1'd1: begin
-		end
-		2'd2: begin
-		end
-		2'd3: begin
-			basesoc_cdcusb_cdcusbphy_usb_core_rx_line_state_se00 <= 1'd1;
 		end
 		3'd4: begin
 		end
@@ -3966,6 +3971,29 @@ always @(*) begin
 	endcase
 end
 always @(*) begin
+	basesoc_cdcusb_cdcusbphy_usb_core_rx_detect_pkt_active <= 1'd0;
+	case (csrtransform_rxpipeline_rxpacketdetect_state)
+		1'd1: begin
+		end
+		2'd2: begin
+		end
+		2'd3: begin
+		end
+		3'd4: begin
+		end
+		3'd5: begin
+		end
+		3'd6: begin
+			basesoc_cdcusb_cdcusbphy_usb_core_rx_detect_pkt_active <= 1'd1;
+			if ((basesoc_cdcusb_cdcusbphy_usb_core_rx_detect_i_valid & basesoc_cdcusb_cdcusbphy_usb_core_rx_detect_i_se0)) begin
+				basesoc_cdcusb_cdcusbphy_usb_core_rx_detect_pkt_active <= 1'd0;
+			end
+		end
+		default: begin
+		end
+	endcase
+end
+always @(*) begin
 	basesoc_cdcusb_cdcusbphy_usb_core_rx_detect_pkt_end <= 1'd0;
 	case (csrtransform_rxpipeline_rxpacketdetect_state)
 		1'd1: begin
@@ -4009,29 +4037,6 @@ always @(*) begin
 			end
 		end
 		3'd6: begin
-		end
-		default: begin
-		end
-	endcase
-end
-always @(*) begin
-	basesoc_cdcusb_cdcusbphy_usb_core_rx_detect_pkt_active <= 1'd0;
-	case (csrtransform_rxpipeline_rxpacketdetect_state)
-		1'd1: begin
-		end
-		2'd2: begin
-		end
-		2'd3: begin
-		end
-		3'd4: begin
-		end
-		3'd5: begin
-		end
-		3'd6: begin
-			basesoc_cdcusb_cdcusbphy_usb_core_rx_detect_pkt_active <= 1'd1;
-			if ((basesoc_cdcusb_cdcusbphy_usb_core_rx_detect_i_valid & basesoc_cdcusb_cdcusbphy_usb_core_rx_detect_i_se0)) begin
-				basesoc_cdcusb_cdcusbphy_usb_core_rx_detect_pkt_active <= 1'd0;
-			end
 		end
 		default: begin
 		end
@@ -4219,6 +4224,24 @@ always @(*) begin
 	endcase
 end
 always @(*) begin
+	basesoc_cdcusb_cdcusbphy_usb_core_endp4_subfragments_csrtransform_packetheaderdecode_next_value_ce1 <= 1'd0;
+	case (csrtransform_packetheaderdecode_state)
+		1'd1: begin
+		end
+		2'd2: begin
+			if (basesoc_cdcusb_cdcusbphy_usb_core_rx_o_data_strobe) begin
+				basesoc_cdcusb_cdcusbphy_usb_core_endp4_subfragments_csrtransform_packetheaderdecode_next_value_ce1 <= 1'd1;
+			end
+		end
+		2'd3: begin
+		end
+		3'd4: begin
+		end
+		default: begin
+		end
+	endcase
+end
+always @(*) begin
 	basesoc_cdcusb_cdcusbphy_usb_core_o_endp_subfragments_csrtransform_packetheaderdecode_next_value2 <= 4'd0;
 	case (csrtransform_packetheaderdecode_state)
 		1'd1: begin
@@ -4386,24 +4409,6 @@ always @(*) begin
 		2'd2: begin
 			if (basesoc_cdcusb_cdcusbphy_usb_core_rx_o_data_strobe) begin
 				basesoc_cdcusb_cdcusbphy_usb_core_endp4_subfragments_csrtransform_packetheaderdecode_next_value1 <= basesoc_cdcusb_cdcusbphy_usb_core_rx_o_data_payload[7];
-			end
-		end
-		2'd3: begin
-		end
-		3'd4: begin
-		end
-		default: begin
-		end
-	endcase
-end
-always @(*) begin
-	basesoc_cdcusb_cdcusbphy_usb_core_endp4_subfragments_csrtransform_packetheaderdecode_next_value_ce1 <= 1'd0;
-	case (csrtransform_packetheaderdecode_state)
-		1'd1: begin
-		end
-		2'd2: begin
-			if (basesoc_cdcusb_cdcusbphy_usb_core_rx_o_data_strobe) begin
-				basesoc_cdcusb_cdcusbphy_usb_core_endp4_subfragments_csrtransform_packetheaderdecode_next_value_ce1 <= 1'd1;
 			end
 		end
 		2'd3: begin
@@ -7683,6 +7688,14 @@ assign basesoc_sdram_slave_p1_rddata_en = basesoc_sdram_dfi_p1_rddata_en;
 assign basesoc_sdram_dfi_p1_rddata = basesoc_sdram_slave_p1_rddata;
 assign basesoc_sdram_dfi_p1_rddata_valid = basesoc_sdram_slave_p1_rddata_valid;
 always @(*) begin
+	basesoc_sdram_master_p0_cs_n <= 1'd1;
+	if (basesoc_sdram_sel) begin
+		basesoc_sdram_master_p0_cs_n <= basesoc_sdram_slave_p0_cs_n;
+	end else begin
+		basesoc_sdram_master_p0_cs_n <= basesoc_sdram_inti_p0_cs_n;
+	end
+end
+always @(*) begin
 	basesoc_sdram_master_p0_ras_n <= 1'd1;
 	if (basesoc_sdram_sel) begin
 		basesoc_sdram_master_p0_ras_n <= basesoc_sdram_slave_p0_ras_n;
@@ -7954,20 +7967,20 @@ always @(*) begin
 		basesoc_sdram_master_p0_cas_n <= basesoc_sdram_inti_p0_cas_n;
 	end
 end
-always @(*) begin
-	basesoc_sdram_master_p0_cs_n <= 1'd1;
-	if (basesoc_sdram_sel) begin
-		basesoc_sdram_master_p0_cs_n <= basesoc_sdram_slave_p0_cs_n;
-	end else begin
-		basesoc_sdram_master_p0_cs_n <= basesoc_sdram_inti_p0_cs_n;
-	end
-end
 assign basesoc_sdram_inti_p0_cke = basesoc_sdram_cke;
 assign basesoc_sdram_inti_p1_cke = basesoc_sdram_cke;
 assign basesoc_sdram_inti_p0_odt = basesoc_sdram_odt;
 assign basesoc_sdram_inti_p1_odt = basesoc_sdram_odt;
 assign basesoc_sdram_inti_p0_reset_n = basesoc_sdram_reset_n;
 assign basesoc_sdram_inti_p1_reset_n = basesoc_sdram_reset_n;
+always @(*) begin
+	basesoc_sdram_inti_p0_we_n <= 1'd1;
+	if (basesoc_sdram_phaseinjector0_command_issue_re) begin
+		basesoc_sdram_inti_p0_we_n <= (~basesoc_sdram_phaseinjector0_command_storage[1]);
+	end else begin
+		basesoc_sdram_inti_p0_we_n <= 1'd1;
+	end
+end
 always @(*) begin
 	basesoc_sdram_inti_p0_cas_n <= 1'd1;
 	if (basesoc_sdram_phaseinjector0_command_issue_re) begin
@@ -7992,20 +8005,20 @@ always @(*) begin
 		basesoc_sdram_inti_p0_ras_n <= 1'd1;
 	end
 end
-always @(*) begin
-	basesoc_sdram_inti_p0_we_n <= 1'd1;
-	if (basesoc_sdram_phaseinjector0_command_issue_re) begin
-		basesoc_sdram_inti_p0_we_n <= (~basesoc_sdram_phaseinjector0_command_storage[1]);
-	end else begin
-		basesoc_sdram_inti_p0_we_n <= 1'd1;
-	end
-end
 assign basesoc_sdram_inti_p0_address = basesoc_sdram_phaseinjector0_address_storage;
 assign basesoc_sdram_inti_p0_bank = basesoc_sdram_phaseinjector0_baddress_storage;
 assign basesoc_sdram_inti_p0_wrdata_en = (basesoc_sdram_phaseinjector0_command_issue_re & basesoc_sdram_phaseinjector0_command_storage[4]);
 assign basesoc_sdram_inti_p0_rddata_en = (basesoc_sdram_phaseinjector0_command_issue_re & basesoc_sdram_phaseinjector0_command_storage[5]);
 assign basesoc_sdram_inti_p0_wrdata = basesoc_sdram_phaseinjector0_wrdata_storage;
 assign basesoc_sdram_inti_p0_wrdata_mask = 1'd0;
+always @(*) begin
+	basesoc_sdram_inti_p1_we_n <= 1'd1;
+	if (basesoc_sdram_phaseinjector1_command_issue_re) begin
+		basesoc_sdram_inti_p1_we_n <= (~basesoc_sdram_phaseinjector1_command_storage[1]);
+	end else begin
+		basesoc_sdram_inti_p1_we_n <= 1'd1;
+	end
+end
 always @(*) begin
 	basesoc_sdram_inti_p1_cas_n <= 1'd1;
 	if (basesoc_sdram_phaseinjector1_command_issue_re) begin
@@ -8028,14 +8041,6 @@ always @(*) begin
 		basesoc_sdram_inti_p1_ras_n <= (~basesoc_sdram_phaseinjector1_command_storage[3]);
 	end else begin
 		basesoc_sdram_inti_p1_ras_n <= 1'd1;
-	end
-end
-always @(*) begin
-	basesoc_sdram_inti_p1_we_n <= 1'd1;
-	if (basesoc_sdram_phaseinjector1_command_issue_re) begin
-		basesoc_sdram_inti_p1_we_n <= (~basesoc_sdram_phaseinjector1_command_storage[1]);
-	end else begin
-		basesoc_sdram_inti_p1_we_n <= 1'd1;
 	end
 end
 assign basesoc_sdram_inti_p1_address = basesoc_sdram_phaseinjector1_address_storage;
@@ -8146,6 +8151,22 @@ always @(*) begin
 	endcase
 end
 always @(*) begin
+	basesoc_sdram_sequencer_start0 <= 1'd0;
+	case (refresher_state)
+		1'd1: begin
+			if (basesoc_sdram_cmd_ready) begin
+				basesoc_sdram_sequencer_start0 <= 1'd1;
+			end
+		end
+		2'd2: begin
+		end
+		2'd3: begin
+		end
+		default: begin
+		end
+	endcase
+end
+always @(*) begin
 	basesoc_sdram_cmd_valid <= 1'd0;
 	case (refresher_state)
 		1'd1: begin
@@ -8206,22 +8227,6 @@ always @(*) begin
 			if (basesoc_sdram_zqcs_executer_done) begin
 				basesoc_sdram_cmd_last <= 1'd1;
 			end
-		end
-		default: begin
-		end
-	endcase
-end
-always @(*) begin
-	basesoc_sdram_sequencer_start0 <= 1'd0;
-	case (refresher_state)
-		1'd1: begin
-			if (basesoc_sdram_cmd_ready) begin
-				basesoc_sdram_sequencer_start0 <= 1'd1;
-			end
-		end
-		2'd2: begin
-		end
-		2'd3: begin
 		end
 		default: begin
 		end
@@ -8349,6 +8354,32 @@ always @(*) begin
 	endcase
 end
 always @(*) begin
+	basesoc_sdram_bankmachine0_cmd_payload_is_cmd <= 1'd0;
+	case (bankmachine0_state)
+		1'd1: begin
+			if ((basesoc_sdram_bankmachine0_twtpcon_ready & basesoc_sdram_bankmachine0_trascon_ready)) begin
+				basesoc_sdram_bankmachine0_cmd_payload_is_cmd <= 1'd1;
+			end
+		end
+		2'd2: begin
+		end
+		2'd3: begin
+			if (basesoc_sdram_bankmachine0_trccon_ready) begin
+				basesoc_sdram_bankmachine0_cmd_payload_is_cmd <= 1'd1;
+			end
+		end
+		3'd4: begin
+			basesoc_sdram_bankmachine0_cmd_payload_is_cmd <= 1'd1;
+		end
+		3'd5: begin
+		end
+		3'd6: begin
+		end
+		default: begin
+		end
+	endcase
+end
+always @(*) begin
 	basesoc_sdram_bankmachine0_cmd_payload_is_read <= 1'd0;
 	case (bankmachine0_state)
 		1'd1: begin
@@ -8451,6 +8482,28 @@ always @(*) begin
 	endcase
 end
 always @(*) begin
+	basesoc_sdram_bankmachine0_row_col_n_addr_sel <= 1'd0;
+	case (bankmachine0_state)
+		1'd1: begin
+		end
+		2'd2: begin
+		end
+		2'd3: begin
+			if (basesoc_sdram_bankmachine0_trccon_ready) begin
+				basesoc_sdram_bankmachine0_row_col_n_addr_sel <= 1'd1;
+			end
+		end
+		3'd4: begin
+		end
+		3'd5: begin
+		end
+		3'd6: begin
+		end
+		default: begin
+		end
+	endcase
+end
+always @(*) begin
 	basesoc_sdram_bankmachine0_req_rdata_valid <= 1'd0;
 	case (bankmachine0_state)
 		1'd1: begin
@@ -8540,28 +8593,6 @@ always @(*) begin
 					end
 				end
 			end
-		end
-	endcase
-end
-always @(*) begin
-	basesoc_sdram_bankmachine0_row_col_n_addr_sel <= 1'd0;
-	case (bankmachine0_state)
-		1'd1: begin
-		end
-		2'd2: begin
-		end
-		2'd3: begin
-			if (basesoc_sdram_bankmachine0_trccon_ready) begin
-				basesoc_sdram_bankmachine0_row_col_n_addr_sel <= 1'd1;
-			end
-		end
-		3'd4: begin
-		end
-		3'd5: begin
-		end
-		3'd6: begin
-		end
-		default: begin
 		end
 	endcase
 end
@@ -8702,32 +8733,6 @@ always @(*) begin
 		end
 	endcase
 end
-always @(*) begin
-	basesoc_sdram_bankmachine0_cmd_payload_is_cmd <= 1'd0;
-	case (bankmachine0_state)
-		1'd1: begin
-			if ((basesoc_sdram_bankmachine0_twtpcon_ready & basesoc_sdram_bankmachine0_trascon_ready)) begin
-				basesoc_sdram_bankmachine0_cmd_payload_is_cmd <= 1'd1;
-			end
-		end
-		2'd2: begin
-		end
-		2'd3: begin
-			if (basesoc_sdram_bankmachine0_trccon_ready) begin
-				basesoc_sdram_bankmachine0_cmd_payload_is_cmd <= 1'd1;
-			end
-		end
-		3'd4: begin
-			basesoc_sdram_bankmachine0_cmd_payload_is_cmd <= 1'd1;
-		end
-		3'd5: begin
-		end
-		3'd6: begin
-		end
-		default: begin
-		end
-	endcase
-end
 assign basesoc_sdram_bankmachine1_cmd_buffer_lookahead_sink_valid = basesoc_sdram_bankmachine1_req_valid;
 assign basesoc_sdram_bankmachine1_req_ready = basesoc_sdram_bankmachine1_cmd_buffer_lookahead_sink_ready;
 assign basesoc_sdram_bankmachine1_cmd_buffer_lookahead_sink_payload_we = basesoc_sdram_bankmachine1_req_we;
@@ -8850,6 +8855,32 @@ always @(*) begin
 	endcase
 end
 always @(*) begin
+	basesoc_sdram_bankmachine1_cmd_payload_is_cmd <= 1'd0;
+	case (bankmachine1_state)
+		1'd1: begin
+			if ((basesoc_sdram_bankmachine1_twtpcon_ready & basesoc_sdram_bankmachine1_trascon_ready)) begin
+				basesoc_sdram_bankmachine1_cmd_payload_is_cmd <= 1'd1;
+			end
+		end
+		2'd2: begin
+		end
+		2'd3: begin
+			if (basesoc_sdram_bankmachine1_trccon_ready) begin
+				basesoc_sdram_bankmachine1_cmd_payload_is_cmd <= 1'd1;
+			end
+		end
+		3'd4: begin
+			basesoc_sdram_bankmachine1_cmd_payload_is_cmd <= 1'd1;
+		end
+		3'd5: begin
+		end
+		3'd6: begin
+		end
+		default: begin
+		end
+	endcase
+end
+always @(*) begin
 	basesoc_sdram_bankmachine1_cmd_payload_is_read <= 1'd0;
 	case (bankmachine1_state)
 		1'd1: begin
@@ -8952,28 +8983,6 @@ always @(*) begin
 	endcase
 end
 always @(*) begin
-	basesoc_sdram_bankmachine1_row_col_n_addr_sel <= 1'd0;
-	case (bankmachine1_state)
-		1'd1: begin
-		end
-		2'd2: begin
-		end
-		2'd3: begin
-			if (basesoc_sdram_bankmachine1_trccon_ready) begin
-				basesoc_sdram_bankmachine1_row_col_n_addr_sel <= 1'd1;
-			end
-		end
-		3'd4: begin
-		end
-		3'd5: begin
-		end
-		3'd6: begin
-		end
-		default: begin
-		end
-	endcase
-end
-always @(*) begin
 	basesoc_sdram_bankmachine1_req_rdata_valid <= 1'd0;
 	case (bankmachine1_state)
 		1'd1: begin
@@ -9063,6 +9072,28 @@ always @(*) begin
 					end
 				end
 			end
+		end
+	endcase
+end
+always @(*) begin
+	basesoc_sdram_bankmachine1_row_col_n_addr_sel <= 1'd0;
+	case (bankmachine1_state)
+		1'd1: begin
+		end
+		2'd2: begin
+		end
+		2'd3: begin
+			if (basesoc_sdram_bankmachine1_trccon_ready) begin
+				basesoc_sdram_bankmachine1_row_col_n_addr_sel <= 1'd1;
+			end
+		end
+		3'd4: begin
+		end
+		3'd5: begin
+		end
+		3'd6: begin
+		end
+		default: begin
 		end
 	endcase
 end
@@ -9203,32 +9234,6 @@ always @(*) begin
 		end
 	endcase
 end
-always @(*) begin
-	basesoc_sdram_bankmachine1_cmd_payload_is_cmd <= 1'd0;
-	case (bankmachine1_state)
-		1'd1: begin
-			if ((basesoc_sdram_bankmachine1_twtpcon_ready & basesoc_sdram_bankmachine1_trascon_ready)) begin
-				basesoc_sdram_bankmachine1_cmd_payload_is_cmd <= 1'd1;
-			end
-		end
-		2'd2: begin
-		end
-		2'd3: begin
-			if (basesoc_sdram_bankmachine1_trccon_ready) begin
-				basesoc_sdram_bankmachine1_cmd_payload_is_cmd <= 1'd1;
-			end
-		end
-		3'd4: begin
-			basesoc_sdram_bankmachine1_cmd_payload_is_cmd <= 1'd1;
-		end
-		3'd5: begin
-		end
-		3'd6: begin
-		end
-		default: begin
-		end
-	endcase
-end
 assign basesoc_sdram_bankmachine2_cmd_buffer_lookahead_sink_valid = basesoc_sdram_bankmachine2_req_valid;
 assign basesoc_sdram_bankmachine2_req_ready = basesoc_sdram_bankmachine2_cmd_buffer_lookahead_sink_ready;
 assign basesoc_sdram_bankmachine2_cmd_buffer_lookahead_sink_payload_we = basesoc_sdram_bankmachine2_req_we;
@@ -9347,6 +9352,32 @@ always @(*) begin
 					end
 				end
 			end
+		end
+	endcase
+end
+always @(*) begin
+	basesoc_sdram_bankmachine2_cmd_payload_is_cmd <= 1'd0;
+	case (bankmachine2_state)
+		1'd1: begin
+			if ((basesoc_sdram_bankmachine2_twtpcon_ready & basesoc_sdram_bankmachine2_trascon_ready)) begin
+				basesoc_sdram_bankmachine2_cmd_payload_is_cmd <= 1'd1;
+			end
+		end
+		2'd2: begin
+		end
+		2'd3: begin
+			if (basesoc_sdram_bankmachine2_trccon_ready) begin
+				basesoc_sdram_bankmachine2_cmd_payload_is_cmd <= 1'd1;
+			end
+		end
+		3'd4: begin
+			basesoc_sdram_bankmachine2_cmd_payload_is_cmd <= 1'd1;
+		end
+		3'd5: begin
+		end
+		3'd6: begin
+		end
+		default: begin
 		end
 	endcase
 end
@@ -9546,28 +9577,6 @@ always @(*) begin
 	endcase
 end
 always @(*) begin
-	basesoc_sdram_bankmachine2_row_col_n_addr_sel <= 1'd0;
-	case (bankmachine2_state)
-		1'd1: begin
-		end
-		2'd2: begin
-		end
-		2'd3: begin
-			if (basesoc_sdram_bankmachine2_trccon_ready) begin
-				basesoc_sdram_bankmachine2_row_col_n_addr_sel <= 1'd1;
-			end
-		end
-		3'd4: begin
-		end
-		3'd5: begin
-		end
-		3'd6: begin
-		end
-		default: begin
-		end
-	endcase
-end
-always @(*) begin
 	basesoc_sdram_bankmachine2_row_open <= 1'd0;
 	case (bankmachine2_state)
 		1'd1: begin
@@ -9602,6 +9611,28 @@ always @(*) begin
 		end
 		3'd4: begin
 			basesoc_sdram_bankmachine2_row_close <= 1'd1;
+		end
+		3'd5: begin
+		end
+		3'd6: begin
+		end
+		default: begin
+		end
+	endcase
+end
+always @(*) begin
+	basesoc_sdram_bankmachine2_row_col_n_addr_sel <= 1'd0;
+	case (bankmachine2_state)
+		1'd1: begin
+		end
+		2'd2: begin
+		end
+		2'd3: begin
+			if (basesoc_sdram_bankmachine2_trccon_ready) begin
+				basesoc_sdram_bankmachine2_row_col_n_addr_sel <= 1'd1;
+			end
+		end
+		3'd4: begin
 		end
 		3'd5: begin
 		end
@@ -9701,32 +9732,6 @@ always @(*) begin
 					end
 				end
 			end
-		end
-	endcase
-end
-always @(*) begin
-	basesoc_sdram_bankmachine2_cmd_payload_is_cmd <= 1'd0;
-	case (bankmachine2_state)
-		1'd1: begin
-			if ((basesoc_sdram_bankmachine2_twtpcon_ready & basesoc_sdram_bankmachine2_trascon_ready)) begin
-				basesoc_sdram_bankmachine2_cmd_payload_is_cmd <= 1'd1;
-			end
-		end
-		2'd2: begin
-		end
-		2'd3: begin
-			if (basesoc_sdram_bankmachine2_trccon_ready) begin
-				basesoc_sdram_bankmachine2_cmd_payload_is_cmd <= 1'd1;
-			end
-		end
-		3'd4: begin
-			basesoc_sdram_bankmachine2_cmd_payload_is_cmd <= 1'd1;
-		end
-		3'd5: begin
-		end
-		3'd6: begin
-		end
-		default: begin
 		end
 	endcase
 end
@@ -9848,6 +9853,54 @@ always @(*) begin
 					end
 				end
 			end
+		end
+	endcase
+end
+always @(*) begin
+	basesoc_sdram_bankmachine3_cmd_payload_is_cmd <= 1'd0;
+	case (bankmachine3_state)
+		1'd1: begin
+			if ((basesoc_sdram_bankmachine3_twtpcon_ready & basesoc_sdram_bankmachine3_trascon_ready)) begin
+				basesoc_sdram_bankmachine3_cmd_payload_is_cmd <= 1'd1;
+			end
+		end
+		2'd2: begin
+		end
+		2'd3: begin
+			if (basesoc_sdram_bankmachine3_trccon_ready) begin
+				basesoc_sdram_bankmachine3_cmd_payload_is_cmd <= 1'd1;
+			end
+		end
+		3'd4: begin
+			basesoc_sdram_bankmachine3_cmd_payload_is_cmd <= 1'd1;
+		end
+		3'd5: begin
+		end
+		3'd6: begin
+		end
+		default: begin
+		end
+	endcase
+end
+always @(*) begin
+	basesoc_sdram_bankmachine3_row_col_n_addr_sel <= 1'd0;
+	case (bankmachine3_state)
+		1'd1: begin
+		end
+		2'd2: begin
+		end
+		2'd3: begin
+			if (basesoc_sdram_bankmachine3_trccon_ready) begin
+				basesoc_sdram_bankmachine3_row_col_n_addr_sel <= 1'd1;
+			end
+		end
+		3'd4: begin
+		end
+		3'd5: begin
+		end
+		3'd6: begin
+		end
+		default: begin
 		end
 	endcase
 end
@@ -10091,28 +10144,6 @@ always @(*) begin
 	endcase
 end
 always @(*) begin
-	basesoc_sdram_bankmachine3_row_col_n_addr_sel <= 1'd0;
-	case (bankmachine3_state)
-		1'd1: begin
-		end
-		2'd2: begin
-		end
-		2'd3: begin
-			if (basesoc_sdram_bankmachine3_trccon_ready) begin
-				basesoc_sdram_bankmachine3_row_col_n_addr_sel <= 1'd1;
-			end
-		end
-		3'd4: begin
-		end
-		3'd5: begin
-		end
-		3'd6: begin
-		end
-		default: begin
-		end
-	endcase
-end
-always @(*) begin
 	basesoc_sdram_bankmachine3_cmd_payload_cas <= 1'd0;
 	case (bankmachine3_state)
 		1'd1: begin
@@ -10202,32 +10233,6 @@ always @(*) begin
 					end
 				end
 			end
-		end
-	endcase
-end
-always @(*) begin
-	basesoc_sdram_bankmachine3_cmd_payload_is_cmd <= 1'd0;
-	case (bankmachine3_state)
-		1'd1: begin
-			if ((basesoc_sdram_bankmachine3_twtpcon_ready & basesoc_sdram_bankmachine3_trascon_ready)) begin
-				basesoc_sdram_bankmachine3_cmd_payload_is_cmd <= 1'd1;
-			end
-		end
-		2'd2: begin
-		end
-		2'd3: begin
-			if (basesoc_sdram_bankmachine3_trccon_ready) begin
-				basesoc_sdram_bankmachine3_cmd_payload_is_cmd <= 1'd1;
-			end
-		end
-		3'd4: begin
-			basesoc_sdram_bankmachine3_cmd_payload_is_cmd <= 1'd1;
-		end
-		3'd5: begin
-		end
-		3'd6: begin
-		end
-		default: begin
 		end
 	endcase
 end
@@ -10353,6 +10358,32 @@ always @(*) begin
 	endcase
 end
 always @(*) begin
+	basesoc_sdram_bankmachine4_cmd_payload_is_cmd <= 1'd0;
+	case (bankmachine4_state)
+		1'd1: begin
+			if ((basesoc_sdram_bankmachine4_twtpcon_ready & basesoc_sdram_bankmachine4_trascon_ready)) begin
+				basesoc_sdram_bankmachine4_cmd_payload_is_cmd <= 1'd1;
+			end
+		end
+		2'd2: begin
+		end
+		2'd3: begin
+			if (basesoc_sdram_bankmachine4_trccon_ready) begin
+				basesoc_sdram_bankmachine4_cmd_payload_is_cmd <= 1'd1;
+			end
+		end
+		3'd4: begin
+			basesoc_sdram_bankmachine4_cmd_payload_is_cmd <= 1'd1;
+		end
+		3'd5: begin
+		end
+		3'd6: begin
+		end
+		default: begin
+		end
+	endcase
+end
+always @(*) begin
 	basesoc_sdram_bankmachine4_cmd_payload_is_read <= 1'd0;
 	case (bankmachine4_state)
 		1'd1: begin
@@ -10383,28 +10414,6 @@ always @(*) begin
 					end
 				end
 			end
-		end
-	endcase
-end
-always @(*) begin
-	basesoc_sdram_bankmachine4_row_col_n_addr_sel <= 1'd0;
-	case (bankmachine4_state)
-		1'd1: begin
-		end
-		2'd2: begin
-		end
-		2'd3: begin
-			if (basesoc_sdram_bankmachine4_trccon_ready) begin
-				basesoc_sdram_bankmachine4_row_col_n_addr_sel <= 1'd1;
-			end
-		end
-		3'd4: begin
-		end
-		3'd5: begin
-		end
-		3'd6: begin
-		end
-		default: begin
 		end
 	endcase
 end
@@ -10477,32 +10486,6 @@ always @(*) begin
 	endcase
 end
 always @(*) begin
-	basesoc_sdram_bankmachine4_cmd_payload_is_cmd <= 1'd0;
-	case (bankmachine4_state)
-		1'd1: begin
-			if ((basesoc_sdram_bankmachine4_twtpcon_ready & basesoc_sdram_bankmachine4_trascon_ready)) begin
-				basesoc_sdram_bankmachine4_cmd_payload_is_cmd <= 1'd1;
-			end
-		end
-		2'd2: begin
-		end
-		2'd3: begin
-			if (basesoc_sdram_bankmachine4_trccon_ready) begin
-				basesoc_sdram_bankmachine4_cmd_payload_is_cmd <= 1'd1;
-			end
-		end
-		3'd4: begin
-			basesoc_sdram_bankmachine4_cmd_payload_is_cmd <= 1'd1;
-		end
-		3'd5: begin
-		end
-		3'd6: begin
-		end
-		default: begin
-		end
-	endcase
-end
-always @(*) begin
 	basesoc_sdram_bankmachine4_req_rdata_valid <= 1'd0;
 	case (bankmachine4_state)
 		1'd1: begin
@@ -10533,6 +10516,28 @@ always @(*) begin
 					end
 				end
 			end
+		end
+	endcase
+end
+always @(*) begin
+	basesoc_sdram_bankmachine4_row_col_n_addr_sel <= 1'd0;
+	case (bankmachine4_state)
+		1'd1: begin
+		end
+		2'd2: begin
+		end
+		2'd3: begin
+			if (basesoc_sdram_bankmachine4_trccon_ready) begin
+				basesoc_sdram_bankmachine4_row_col_n_addr_sel <= 1'd1;
+			end
+		end
+		3'd4: begin
+		end
+		3'd5: begin
+		end
+		3'd6: begin
+		end
+		default: begin
 		end
 	endcase
 end
@@ -10854,6 +10859,32 @@ always @(*) begin
 	endcase
 end
 always @(*) begin
+	basesoc_sdram_bankmachine5_cmd_payload_is_cmd <= 1'd0;
+	case (bankmachine5_state)
+		1'd1: begin
+			if ((basesoc_sdram_bankmachine5_twtpcon_ready & basesoc_sdram_bankmachine5_trascon_ready)) begin
+				basesoc_sdram_bankmachine5_cmd_payload_is_cmd <= 1'd1;
+			end
+		end
+		2'd2: begin
+		end
+		2'd3: begin
+			if (basesoc_sdram_bankmachine5_trccon_ready) begin
+				basesoc_sdram_bankmachine5_cmd_payload_is_cmd <= 1'd1;
+			end
+		end
+		3'd4: begin
+			basesoc_sdram_bankmachine5_cmd_payload_is_cmd <= 1'd1;
+		end
+		3'd5: begin
+		end
+		3'd6: begin
+		end
+		default: begin
+		end
+	endcase
+end
+always @(*) begin
 	basesoc_sdram_bankmachine5_cmd_payload_is_read <= 1'd0;
 	case (bankmachine5_state)
 		1'd1: begin
@@ -10918,6 +10949,31 @@ always @(*) begin
 					end
 				end
 			end
+		end
+	endcase
+end
+always @(*) begin
+	basesoc_sdram_bankmachine5_cmd_payload_ras <= 1'd0;
+	case (bankmachine5_state)
+		1'd1: begin
+			if ((basesoc_sdram_bankmachine5_twtpcon_ready & basesoc_sdram_bankmachine5_trascon_ready)) begin
+				basesoc_sdram_bankmachine5_cmd_payload_ras <= 1'd1;
+			end
+		end
+		2'd2: begin
+		end
+		2'd3: begin
+			if (basesoc_sdram_bankmachine5_trccon_ready) begin
+				basesoc_sdram_bankmachine5_cmd_payload_ras <= 1'd1;
+			end
+		end
+		3'd4: begin
+		end
+		3'd5: begin
+		end
+		3'd6: begin
+		end
+		default: begin
 		end
 	endcase
 end
@@ -10990,53 +11046,6 @@ always @(*) begin
 	endcase
 end
 always @(*) begin
-	basesoc_sdram_bankmachine5_row_col_n_addr_sel <= 1'd0;
-	case (bankmachine5_state)
-		1'd1: begin
-		end
-		2'd2: begin
-		end
-		2'd3: begin
-			if (basesoc_sdram_bankmachine5_trccon_ready) begin
-				basesoc_sdram_bankmachine5_row_col_n_addr_sel <= 1'd1;
-			end
-		end
-		3'd4: begin
-		end
-		3'd5: begin
-		end
-		3'd6: begin
-		end
-		default: begin
-		end
-	endcase
-end
-always @(*) begin
-	basesoc_sdram_bankmachine5_cmd_payload_ras <= 1'd0;
-	case (bankmachine5_state)
-		1'd1: begin
-			if ((basesoc_sdram_bankmachine5_twtpcon_ready & basesoc_sdram_bankmachine5_trascon_ready)) begin
-				basesoc_sdram_bankmachine5_cmd_payload_ras <= 1'd1;
-			end
-		end
-		2'd2: begin
-		end
-		2'd3: begin
-			if (basesoc_sdram_bankmachine5_trccon_ready) begin
-				basesoc_sdram_bankmachine5_cmd_payload_ras <= 1'd1;
-			end
-		end
-		3'd4: begin
-		end
-		3'd5: begin
-		end
-		3'd6: begin
-		end
-		default: begin
-		end
-	endcase
-end
-always @(*) begin
 	basesoc_sdram_bankmachine5_refresh_gnt <= 1'd0;
 	case (bankmachine5_state)
 		1'd1: begin
@@ -11092,6 +11101,28 @@ always @(*) begin
 					end
 				end
 			end
+		end
+	endcase
+end
+always @(*) begin
+	basesoc_sdram_bankmachine5_row_col_n_addr_sel <= 1'd0;
+	case (bankmachine5_state)
+		1'd1: begin
+		end
+		2'd2: begin
+		end
+		2'd3: begin
+			if (basesoc_sdram_bankmachine5_trccon_ready) begin
+				basesoc_sdram_bankmachine5_row_col_n_addr_sel <= 1'd1;
+			end
+		end
+		3'd4: begin
+		end
+		3'd5: begin
+		end
+		3'd6: begin
+		end
+		default: begin
 		end
 	endcase
 end
@@ -11204,32 +11235,6 @@ always @(*) begin
 					end
 				end
 			end
-		end
-	endcase
-end
-always @(*) begin
-	basesoc_sdram_bankmachine5_cmd_payload_is_cmd <= 1'd0;
-	case (bankmachine5_state)
-		1'd1: begin
-			if ((basesoc_sdram_bankmachine5_twtpcon_ready & basesoc_sdram_bankmachine5_trascon_ready)) begin
-				basesoc_sdram_bankmachine5_cmd_payload_is_cmd <= 1'd1;
-			end
-		end
-		2'd2: begin
-		end
-		2'd3: begin
-			if (basesoc_sdram_bankmachine5_trccon_ready) begin
-				basesoc_sdram_bankmachine5_cmd_payload_is_cmd <= 1'd1;
-			end
-		end
-		3'd4: begin
-			basesoc_sdram_bankmachine5_cmd_payload_is_cmd <= 1'd1;
-		end
-		3'd5: begin
-		end
-		3'd6: begin
-		end
-		default: begin
 		end
 	endcase
 end
@@ -11351,6 +11356,32 @@ always @(*) begin
 					end
 				end
 			end
+		end
+	endcase
+end
+always @(*) begin
+	basesoc_sdram_bankmachine6_cmd_payload_is_cmd <= 1'd0;
+	case (bankmachine6_state)
+		1'd1: begin
+			if ((basesoc_sdram_bankmachine6_twtpcon_ready & basesoc_sdram_bankmachine6_trascon_ready)) begin
+				basesoc_sdram_bankmachine6_cmd_payload_is_cmd <= 1'd1;
+			end
+		end
+		2'd2: begin
+		end
+		2'd3: begin
+			if (basesoc_sdram_bankmachine6_trccon_ready) begin
+				basesoc_sdram_bankmachine6_cmd_payload_is_cmd <= 1'd1;
+			end
+		end
+		3'd4: begin
+			basesoc_sdram_bankmachine6_cmd_payload_is_cmd <= 1'd1;
+		end
+		3'd5: begin
+		end
+		3'd6: begin
+		end
+		default: begin
 		end
 	endcase
 end
@@ -11708,32 +11739,6 @@ always @(*) begin
 		end
 	endcase
 end
-always @(*) begin
-	basesoc_sdram_bankmachine6_cmd_payload_is_cmd <= 1'd0;
-	case (bankmachine6_state)
-		1'd1: begin
-			if ((basesoc_sdram_bankmachine6_twtpcon_ready & basesoc_sdram_bankmachine6_trascon_ready)) begin
-				basesoc_sdram_bankmachine6_cmd_payload_is_cmd <= 1'd1;
-			end
-		end
-		2'd2: begin
-		end
-		2'd3: begin
-			if (basesoc_sdram_bankmachine6_trccon_ready) begin
-				basesoc_sdram_bankmachine6_cmd_payload_is_cmd <= 1'd1;
-			end
-		end
-		3'd4: begin
-			basesoc_sdram_bankmachine6_cmd_payload_is_cmd <= 1'd1;
-		end
-		3'd5: begin
-		end
-		3'd6: begin
-		end
-		default: begin
-		end
-	endcase
-end
 assign basesoc_sdram_bankmachine7_cmd_buffer_lookahead_sink_valid = basesoc_sdram_bankmachine7_req_valid;
 assign basesoc_sdram_bankmachine7_req_ready = basesoc_sdram_bankmachine7_cmd_buffer_lookahead_sink_ready;
 assign basesoc_sdram_bankmachine7_cmd_buffer_lookahead_sink_payload_we = basesoc_sdram_bankmachine7_req_we;
@@ -11856,6 +11861,32 @@ always @(*) begin
 	endcase
 end
 always @(*) begin
+	basesoc_sdram_bankmachine7_cmd_payload_is_cmd <= 1'd0;
+	case (bankmachine7_state)
+		1'd1: begin
+			if ((basesoc_sdram_bankmachine7_twtpcon_ready & basesoc_sdram_bankmachine7_trascon_ready)) begin
+				basesoc_sdram_bankmachine7_cmd_payload_is_cmd <= 1'd1;
+			end
+		end
+		2'd2: begin
+		end
+		2'd3: begin
+			if (basesoc_sdram_bankmachine7_trccon_ready) begin
+				basesoc_sdram_bankmachine7_cmd_payload_is_cmd <= 1'd1;
+			end
+		end
+		3'd4: begin
+			basesoc_sdram_bankmachine7_cmd_payload_is_cmd <= 1'd1;
+		end
+		3'd5: begin
+		end
+		3'd6: begin
+		end
+		default: begin
+		end
+	endcase
+end
+always @(*) begin
 	basesoc_sdram_bankmachine7_cmd_payload_is_read <= 1'd0;
 	case (bankmachine7_state)
 		1'd1: begin
@@ -11920,6 +11951,28 @@ always @(*) begin
 					end
 				end
 			end
+		end
+	endcase
+end
+always @(*) begin
+	basesoc_sdram_bankmachine7_row_col_n_addr_sel <= 1'd0;
+	case (bankmachine7_state)
+		1'd1: begin
+		end
+		2'd2: begin
+		end
+		2'd3: begin
+			if (basesoc_sdram_bankmachine7_trccon_ready) begin
+				basesoc_sdram_bankmachine7_row_col_n_addr_sel <= 1'd1;
+			end
+		end
+		3'd4: begin
+		end
+		3'd5: begin
+		end
+		3'd6: begin
+		end
+		default: begin
 		end
 	endcase
 end
@@ -12151,28 +12204,6 @@ always @(*) begin
 	endcase
 end
 always @(*) begin
-	basesoc_sdram_bankmachine7_row_col_n_addr_sel <= 1'd0;
-	case (bankmachine7_state)
-		1'd1: begin
-		end
-		2'd2: begin
-		end
-		2'd3: begin
-			if (basesoc_sdram_bankmachine7_trccon_ready) begin
-				basesoc_sdram_bankmachine7_row_col_n_addr_sel <= 1'd1;
-			end
-		end
-		3'd4: begin
-		end
-		3'd5: begin
-		end
-		3'd6: begin
-		end
-		default: begin
-		end
-	endcase
-end
-always @(*) begin
 	basesoc_sdram_bankmachine7_cmd_payload_we <= 1'd0;
 	case (bankmachine7_state)
 		1'd1: begin
@@ -12206,32 +12237,6 @@ always @(*) begin
 					end
 				end
 			end
-		end
-	endcase
-end
-always @(*) begin
-	basesoc_sdram_bankmachine7_cmd_payload_is_cmd <= 1'd0;
-	case (bankmachine7_state)
-		1'd1: begin
-			if ((basesoc_sdram_bankmachine7_twtpcon_ready & basesoc_sdram_bankmachine7_trascon_ready)) begin
-				basesoc_sdram_bankmachine7_cmd_payload_is_cmd <= 1'd1;
-			end
-		end
-		2'd2: begin
-		end
-		2'd3: begin
-			if (basesoc_sdram_bankmachine7_trccon_ready) begin
-				basesoc_sdram_bankmachine7_cmd_payload_is_cmd <= 1'd1;
-			end
-		end
-		3'd4: begin
-			basesoc_sdram_bankmachine7_cmd_payload_is_cmd <= 1'd1;
-		end
-		3'd5: begin
-		end
-		3'd6: begin
-		end
-		default: begin
 		end
 	endcase
 end
@@ -12480,6 +12485,58 @@ always @(*) begin
 			end
 			if (basesoc_sdram_go_to_refresh) begin
 				multiplexer_next_state <= 2'd2;
+			end
+		end
+	endcase
+end
+always @(*) begin
+	basesoc_sdram_steerer_sel0 <= 2'd0;
+	case (multiplexer_state)
+		1'd1: begin
+			basesoc_sdram_steerer_sel0 <= 1'd0;
+			if (1'd0) begin
+				basesoc_sdram_steerer_sel0 <= 2'd2;
+			end
+			if (1'd1) begin
+				basesoc_sdram_steerer_sel0 <= 1'd1;
+			end
+		end
+		2'd2: begin
+			basesoc_sdram_steerer_sel0 <= 2'd3;
+		end
+		2'd3: begin
+		end
+		3'd4: begin
+		end
+		3'd5: begin
+		end
+		3'd6: begin
+		end
+		3'd7: begin
+		end
+		4'd8: begin
+		end
+		4'd9: begin
+		end
+		4'd10: begin
+		end
+		4'd11: begin
+		end
+		4'd12: begin
+		end
+		4'd13: begin
+		end
+		4'd14: begin
+		end
+		4'd15: begin
+		end
+		default: begin
+			basesoc_sdram_steerer_sel0 <= 1'd0;
+			if (1'd1) begin
+				basesoc_sdram_steerer_sel0 <= 2'd2;
+			end
+			if (1'd0) begin
+				basesoc_sdram_steerer_sel0 <= 1'd1;
 			end
 		end
 	endcase
@@ -12862,58 +12919,6 @@ always @(*) begin
 		end
 	endcase
 end
-always @(*) begin
-	basesoc_sdram_steerer_sel0 <= 2'd0;
-	case (multiplexer_state)
-		1'd1: begin
-			basesoc_sdram_steerer_sel0 <= 1'd0;
-			if (1'd0) begin
-				basesoc_sdram_steerer_sel0 <= 2'd2;
-			end
-			if (1'd1) begin
-				basesoc_sdram_steerer_sel0 <= 1'd1;
-			end
-		end
-		2'd2: begin
-			basesoc_sdram_steerer_sel0 <= 2'd3;
-		end
-		2'd3: begin
-		end
-		3'd4: begin
-		end
-		3'd5: begin
-		end
-		3'd6: begin
-		end
-		3'd7: begin
-		end
-		4'd8: begin
-		end
-		4'd9: begin
-		end
-		4'd10: begin
-		end
-		4'd11: begin
-		end
-		4'd12: begin
-		end
-		4'd13: begin
-		end
-		4'd14: begin
-		end
-		4'd15: begin
-		end
-		default: begin
-			basesoc_sdram_steerer_sel0 <= 1'd0;
-			if (1'd1) begin
-				basesoc_sdram_steerer_sel0 <= 2'd2;
-			end
-			if (1'd0) begin
-				basesoc_sdram_steerer_sel0 <= 1'd1;
-			end
-		end
-	endcase
-end
 assign roundrobin0_request = {(((basesoc_port_cmd_payload_addr[9:7] == 1'd0) & (~(((((((locked0 | (basesoc_sdram_interface_bank1_lock & (roundrobin1_grant == 1'd0))) | (basesoc_sdram_interface_bank2_lock & (roundrobin2_grant == 1'd0))) | (basesoc_sdram_interface_bank3_lock & (roundrobin3_grant == 1'd0))) | (basesoc_sdram_interface_bank4_lock & (roundrobin4_grant == 1'd0))) | (basesoc_sdram_interface_bank5_lock & (roundrobin5_grant == 1'd0))) | (basesoc_sdram_interface_bank6_lock & (roundrobin6_grant == 1'd0))) | (basesoc_sdram_interface_bank7_lock & (roundrobin7_grant == 1'd0))))) & basesoc_port_cmd_valid)};
 assign roundrobin0_ce = ((~basesoc_sdram_interface_bank0_valid) & (~basesoc_sdram_interface_bank0_lock));
 assign basesoc_sdram_interface_bank0_addr = rhs_array_muxed12;
@@ -12958,17 +12963,6 @@ assign basesoc_port_cmd_ready = ((((((((1'd0 | (((roundrobin0_grant == 1'd0) & (
 assign basesoc_port_wdata_ready = new_master_wdata_ready3;
 assign basesoc_port_rdata_valid = new_master_rdata_valid13;
 always @(*) begin
-	basesoc_sdram_interface_wdata <= 128'd0;
-	case ({new_master_wdata_ready3})
-		1'd1: begin
-			basesoc_sdram_interface_wdata <= basesoc_port_wdata_payload_data;
-		end
-		default: begin
-			basesoc_sdram_interface_wdata <= 1'd0;
-		end
-	endcase
-end
-always @(*) begin
 	basesoc_sdram_interface_wdata_we <= 16'd0;
 	case ({new_master_wdata_ready3})
 		1'd1: begin
@@ -12976,6 +12970,17 @@ always @(*) begin
 		end
 		default: begin
 			basesoc_sdram_interface_wdata_we <= 1'd0;
+		end
+	endcase
+end
+always @(*) begin
+	basesoc_sdram_interface_wdata <= 128'd0;
+	case ({new_master_wdata_ready3})
+		1'd1: begin
+			basesoc_sdram_interface_wdata <= basesoc_port_wdata_payload_data;
+		end
+		default: begin
+			basesoc_sdram_interface_wdata <= 1'd0;
 		end
 	endcase
 end
@@ -12990,14 +12995,6 @@ assign roundrobin6_grant = 1'd0;
 assign roundrobin7_grant = 1'd0;
 assign basesoc_data_port_adr = basesoc_wb_sdram_adr[10:2];
 always @(*) begin
-	basesoc_data_port_dat_w <= 128'd0;
-	if (basesoc_write_from_slave) begin
-		basesoc_data_port_dat_w <= basesoc_interface_dat_r;
-	end else begin
-		basesoc_data_port_dat_w <= {4{basesoc_wb_sdram_dat_w}};
-	end
-end
-always @(*) begin
 	basesoc_data_port_we <= 16'd0;
 	if (basesoc_write_from_slave) begin
 		basesoc_data_port_we <= {16{1'd1}};
@@ -13005,6 +13002,14 @@ always @(*) begin
 		if ((((basesoc_wb_sdram_cyc & basesoc_wb_sdram_stb) & basesoc_wb_sdram_we) & basesoc_wb_sdram_ack)) begin
 			basesoc_data_port_we <= {({4{(basesoc_wb_sdram_adr[1:0] == 1'd0)}} & basesoc_wb_sdram_sel), ({4{(basesoc_wb_sdram_adr[1:0] == 1'd1)}} & basesoc_wb_sdram_sel), ({4{(basesoc_wb_sdram_adr[1:0] == 2'd2)}} & basesoc_wb_sdram_sel), ({4{(basesoc_wb_sdram_adr[1:0] == 2'd3)}} & basesoc_wb_sdram_sel)};
 		end
+	end
+end
+always @(*) begin
+	basesoc_data_port_dat_w <= 128'd0;
+	if (basesoc_write_from_slave) begin
+		basesoc_data_port_dat_w <= basesoc_interface_dat_r;
+	end else begin
+		basesoc_data_port_dat_w <= {4{basesoc_wb_sdram_dat_w}};
 	end
 end
 assign basesoc_interface_dat_w = basesoc_data_port_dat_r;
@@ -13067,6 +13072,23 @@ always @(*) begin
 			if ((basesoc_wb_sdram_cyc & basesoc_wb_sdram_stb)) begin
 				fullmemorywe_next_state <= 1'd1;
 			end
+		end
+	endcase
+end
+always @(*) begin
+	basesoc_wb_sdram_ack <= 1'd0;
+	case (fullmemorywe_state)
+		1'd1: begin
+			if ((basesoc_tag_do_tag == basesoc_wb_sdram_adr[29:11])) begin
+				basesoc_wb_sdram_ack <= 1'd1;
+			end else begin
+			end
+		end
+		2'd2: begin
+		end
+		2'd3: begin
+		end
+		default: begin
 		end
 	endcase
 end
@@ -13223,23 +13245,6 @@ always @(*) begin
 		end
 	endcase
 end
-always @(*) begin
-	basesoc_wb_sdram_ack <= 1'd0;
-	case (fullmemorywe_state)
-		1'd1: begin
-			if ((basesoc_tag_do_tag == basesoc_wb_sdram_adr[29:11])) begin
-				basesoc_wb_sdram_ack <= 1'd1;
-			end else begin
-			end
-		end
-		2'd2: begin
-		end
-		2'd3: begin
-		end
-		default: begin
-		end
-	endcase
-end
 assign basesoc_port_cmd_payload_addr = (basesoc_interface_adr - 27'd67108864);
 assign basesoc_port_cmd_payload_we = basesoc_interface_we;
 assign basesoc_port_cmd_last = (~basesoc_interface_we);
@@ -13365,6 +13370,14 @@ always @(*) begin
 end
 assign leds_wait = (~leds_done);
 always @(*) begin
+	user_led1 <= 1'd0;
+	if ((leds_mode == 1'd1)) begin
+		{user_led2, user_led1, user_led0} <= leds_storage;
+	end else begin
+		{user_led2, user_led1, user_led0} <= leds_chaser;
+	end
+end
+always @(*) begin
 	user_led2 <= 1'd0;
 	if ((leds_mode == 1'd1)) begin
 		{user_led2, user_led1, user_led0} <= leds_storage;
@@ -13374,14 +13387,6 @@ always @(*) begin
 end
 always @(*) begin
 	user_led0 <= 1'd0;
-	if ((leds_mode == 1'd1)) begin
-		{user_led2, user_led1, user_led0} <= leds_storage;
-	end else begin
-		{user_led2, user_led1, user_led0} <= leds_chaser;
-	end
-end
-always @(*) begin
-	user_led1 <= 1'd0;
 	if ((leds_mode == 1'd1)) begin
 		{user_led2, user_led1, user_led0} <= leds_storage;
 	end else begin
@@ -13407,18 +13412,6 @@ always @(*) begin
 	endcase
 end
 always @(*) begin
-	basesoc_dat_w_basesoc_next_value0 <= 32'd0;
-	case (state)
-		1'd1: begin
-		end
-		2'd2: begin
-		end
-		default: begin
-			basesoc_dat_w_basesoc_next_value0 <= basesoc_wishbone_dat_w;
-		end
-	endcase
-end
-always @(*) begin
 	basesoc_wishbone_dat_r <= 32'd0;
 	case (state)
 		1'd1: begin
@@ -13427,6 +13420,18 @@ always @(*) begin
 			basesoc_wishbone_dat_r <= basesoc_dat_r;
 		end
 		default: begin
+		end
+	endcase
+end
+always @(*) begin
+	basesoc_dat_w_basesoc_next_value0 <= 32'd0;
+	case (state)
+		1'd1: begin
+		end
+		2'd2: begin
+		end
+		default: begin
+			basesoc_dat_w_basesoc_next_value0 <= basesoc_wishbone_dat_w;
 		end
 	endcase
 end
@@ -13458,6 +13463,18 @@ always @(*) begin
 	endcase
 end
 always @(*) begin
+	basesoc_wishbone_ack <= 1'd0;
+	case (state)
+		1'd1: begin
+		end
+		2'd2: begin
+			basesoc_wishbone_ack <= 1'd1;
+		end
+		default: begin
+		end
+	endcase
+end
+always @(*) begin
 	basesoc_adr_basesoc_next_value_ce1 <= 1'd0;
 	case (state)
 		1'd1: begin
@@ -13469,18 +13486,6 @@ always @(*) begin
 			if ((basesoc_wishbone_cyc & basesoc_wishbone_stb)) begin
 				basesoc_adr_basesoc_next_value_ce1 <= 1'd1;
 			end
-		end
-	endcase
-end
-always @(*) begin
-	basesoc_wishbone_ack <= 1'd0;
-	case (state)
-		1'd1: begin
-		end
-		2'd2: begin
-			basesoc_wishbone_ack <= 1'd1;
-		end
-		default: begin
 		end
 	endcase
 end
@@ -13620,15 +13625,15 @@ always @(*) begin
 end
 assign csr_bankarray_csrbank0_bus_errors_r = csr_bankarray_interface0_bank_bus_dat_w[31:0];
 always @(*) begin
-	csr_bankarray_csrbank0_bus_errors_we <= 1'd0;
-	if ((csr_bankarray_csrbank0_sel & (csr_bankarray_interface0_bank_bus_adr[8:0] == 2'd2))) begin
-		csr_bankarray_csrbank0_bus_errors_we <= (~csr_bankarray_interface0_bank_bus_we);
-	end
-end
-always @(*) begin
 	csr_bankarray_csrbank0_bus_errors_re <= 1'd0;
 	if ((csr_bankarray_csrbank0_sel & (csr_bankarray_interface0_bank_bus_adr[8:0] == 2'd2))) begin
 		csr_bankarray_csrbank0_bus_errors_re <= csr_bankarray_interface0_bank_bus_we;
+	end
+end
+always @(*) begin
+	csr_bankarray_csrbank0_bus_errors_we <= 1'd0;
+	if ((csr_bankarray_csrbank0_sel & (csr_bankarray_interface0_bank_bus_adr[8:0] == 2'd2))) begin
+		csr_bankarray_csrbank0_bus_errors_we <= (~csr_bankarray_interface0_bank_bus_we);
 	end
 end
 always @(*) begin
@@ -13658,28 +13663,28 @@ always @(*) begin
 end
 assign ddrphy_rdly_dq_rst_r = csr_bankarray_interface1_bank_bus_dat_w[0];
 always @(*) begin
-	ddrphy_rdly_dq_rst_re <= 1'd0;
-	if ((csr_bankarray_csrbank1_sel & (csr_bankarray_interface1_bank_bus_adr[8:0] == 1'd1))) begin
-		ddrphy_rdly_dq_rst_re <= csr_bankarray_interface1_bank_bus_we;
-	end
-end
-always @(*) begin
 	ddrphy_rdly_dq_rst_we <= 1'd0;
 	if ((csr_bankarray_csrbank1_sel & (csr_bankarray_interface1_bank_bus_adr[8:0] == 1'd1))) begin
 		ddrphy_rdly_dq_rst_we <= (~csr_bankarray_interface1_bank_bus_we);
 	end
 end
-assign ddrphy_rdly_dq_inc_r = csr_bankarray_interface1_bank_bus_dat_w[0];
 always @(*) begin
-	ddrphy_rdly_dq_inc_re <= 1'd0;
-	if ((csr_bankarray_csrbank1_sel & (csr_bankarray_interface1_bank_bus_adr[8:0] == 2'd2))) begin
-		ddrphy_rdly_dq_inc_re <= csr_bankarray_interface1_bank_bus_we;
+	ddrphy_rdly_dq_rst_re <= 1'd0;
+	if ((csr_bankarray_csrbank1_sel & (csr_bankarray_interface1_bank_bus_adr[8:0] == 1'd1))) begin
+		ddrphy_rdly_dq_rst_re <= csr_bankarray_interface1_bank_bus_we;
 	end
 end
+assign ddrphy_rdly_dq_inc_r = csr_bankarray_interface1_bank_bus_dat_w[0];
 always @(*) begin
 	ddrphy_rdly_dq_inc_we <= 1'd0;
 	if ((csr_bankarray_csrbank1_sel & (csr_bankarray_interface1_bank_bus_adr[8:0] == 2'd2))) begin
 		ddrphy_rdly_dq_inc_we <= (~csr_bankarray_interface1_bank_bus_we);
+	end
+end
+always @(*) begin
+	ddrphy_rdly_dq_inc_re <= 1'd0;
+	if ((csr_bankarray_csrbank1_sel & (csr_bankarray_interface1_bank_bus_adr[8:0] == 2'd2))) begin
+		ddrphy_rdly_dq_inc_re <= csr_bankarray_interface1_bank_bus_we;
 	end
 end
 assign ddrphy_rdly_dq_bitslip_rst_r = csr_bankarray_interface1_bank_bus_dat_w[0];
@@ -13710,15 +13715,15 @@ always @(*) begin
 end
 assign ddrphy_burstdet_clr_r = csr_bankarray_interface1_bank_bus_dat_w[0];
 always @(*) begin
-	ddrphy_burstdet_clr_we <= 1'd0;
-	if ((csr_bankarray_csrbank1_sel & (csr_bankarray_interface1_bank_bus_adr[8:0] == 3'd5))) begin
-		ddrphy_burstdet_clr_we <= (~csr_bankarray_interface1_bank_bus_we);
-	end
-end
-always @(*) begin
 	ddrphy_burstdet_clr_re <= 1'd0;
 	if ((csr_bankarray_csrbank1_sel & (csr_bankarray_interface1_bank_bus_adr[8:0] == 3'd5))) begin
 		ddrphy_burstdet_clr_re <= csr_bankarray_interface1_bank_bus_we;
+	end
+end
+always @(*) begin
+	ddrphy_burstdet_clr_we <= 1'd0;
+	if ((csr_bankarray_csrbank1_sel & (csr_bankarray_interface1_bank_bus_adr[8:0] == 3'd5))) begin
+		ddrphy_burstdet_clr_we <= (~csr_bankarray_interface1_bank_bus_we);
 	end
 end
 assign csr_bankarray_csrbank1_burstdet_seen_r = csr_bankarray_interface1_bank_bus_dat_w[1:0];
@@ -13802,28 +13807,28 @@ always @(*) begin
 end
 assign csr_bankarray_csrbank3_dfii_pi0_address0_r = csr_bankarray_interface3_bank_bus_dat_w[14:0];
 always @(*) begin
-	csr_bankarray_csrbank3_dfii_pi0_address0_we <= 1'd0;
-	if ((csr_bankarray_csrbank3_sel & (csr_bankarray_interface3_bank_bus_adr[8:0] == 2'd3))) begin
-		csr_bankarray_csrbank3_dfii_pi0_address0_we <= (~csr_bankarray_interface3_bank_bus_we);
-	end
-end
-always @(*) begin
 	csr_bankarray_csrbank3_dfii_pi0_address0_re <= 1'd0;
 	if ((csr_bankarray_csrbank3_sel & (csr_bankarray_interface3_bank_bus_adr[8:0] == 2'd3))) begin
 		csr_bankarray_csrbank3_dfii_pi0_address0_re <= csr_bankarray_interface3_bank_bus_we;
 	end
 end
-assign csr_bankarray_csrbank3_dfii_pi0_baddress0_r = csr_bankarray_interface3_bank_bus_dat_w[2:0];
 always @(*) begin
-	csr_bankarray_csrbank3_dfii_pi0_baddress0_re <= 1'd0;
-	if ((csr_bankarray_csrbank3_sel & (csr_bankarray_interface3_bank_bus_adr[8:0] == 3'd4))) begin
-		csr_bankarray_csrbank3_dfii_pi0_baddress0_re <= csr_bankarray_interface3_bank_bus_we;
+	csr_bankarray_csrbank3_dfii_pi0_address0_we <= 1'd0;
+	if ((csr_bankarray_csrbank3_sel & (csr_bankarray_interface3_bank_bus_adr[8:0] == 2'd3))) begin
+		csr_bankarray_csrbank3_dfii_pi0_address0_we <= (~csr_bankarray_interface3_bank_bus_we);
 	end
 end
+assign csr_bankarray_csrbank3_dfii_pi0_baddress0_r = csr_bankarray_interface3_bank_bus_dat_w[2:0];
 always @(*) begin
 	csr_bankarray_csrbank3_dfii_pi0_baddress0_we <= 1'd0;
 	if ((csr_bankarray_csrbank3_sel & (csr_bankarray_interface3_bank_bus_adr[8:0] == 3'd4))) begin
 		csr_bankarray_csrbank3_dfii_pi0_baddress0_we <= (~csr_bankarray_interface3_bank_bus_we);
+	end
+end
+always @(*) begin
+	csr_bankarray_csrbank3_dfii_pi0_baddress0_re <= 1'd0;
+	if ((csr_bankarray_csrbank3_sel & (csr_bankarray_interface3_bank_bus_adr[8:0] == 3'd4))) begin
+		csr_bankarray_csrbank3_dfii_pi0_baddress0_re <= csr_bankarray_interface3_bank_bus_we;
 	end
 end
 assign csr_bankarray_csrbank3_dfii_pi0_wrdata1_r = csr_bankarray_interface3_bank_bus_dat_w[31:0];
@@ -13854,15 +13859,15 @@ always @(*) begin
 end
 assign csr_bankarray_csrbank3_dfii_pi0_rddata1_r = csr_bankarray_interface3_bank_bus_dat_w[31:0];
 always @(*) begin
-	csr_bankarray_csrbank3_dfii_pi0_rddata1_re <= 1'd0;
-	if ((csr_bankarray_csrbank3_sel & (csr_bankarray_interface3_bank_bus_adr[8:0] == 3'd7))) begin
-		csr_bankarray_csrbank3_dfii_pi0_rddata1_re <= csr_bankarray_interface3_bank_bus_we;
-	end
-end
-always @(*) begin
 	csr_bankarray_csrbank3_dfii_pi0_rddata1_we <= 1'd0;
 	if ((csr_bankarray_csrbank3_sel & (csr_bankarray_interface3_bank_bus_adr[8:0] == 3'd7))) begin
 		csr_bankarray_csrbank3_dfii_pi0_rddata1_we <= (~csr_bankarray_interface3_bank_bus_we);
+	end
+end
+always @(*) begin
+	csr_bankarray_csrbank3_dfii_pi0_rddata1_re <= 1'd0;
+	if ((csr_bankarray_csrbank3_sel & (csr_bankarray_interface3_bank_bus_adr[8:0] == 3'd7))) begin
+		csr_bankarray_csrbank3_dfii_pi0_rddata1_re <= csr_bankarray_interface3_bank_bus_we;
 	end
 end
 assign csr_bankarray_csrbank3_dfii_pi0_rddata0_r = csr_bankarray_interface3_bank_bus_dat_w[31:0];
@@ -13880,15 +13885,15 @@ always @(*) begin
 end
 assign csr_bankarray_csrbank3_dfii_pi1_command0_r = csr_bankarray_interface3_bank_bus_dat_w[5:0];
 always @(*) begin
-	csr_bankarray_csrbank3_dfii_pi1_command0_we <= 1'd0;
-	if ((csr_bankarray_csrbank3_sel & (csr_bankarray_interface3_bank_bus_adr[8:0] == 4'd9))) begin
-		csr_bankarray_csrbank3_dfii_pi1_command0_we <= (~csr_bankarray_interface3_bank_bus_we);
-	end
-end
-always @(*) begin
 	csr_bankarray_csrbank3_dfii_pi1_command0_re <= 1'd0;
 	if ((csr_bankarray_csrbank3_sel & (csr_bankarray_interface3_bank_bus_adr[8:0] == 4'd9))) begin
 		csr_bankarray_csrbank3_dfii_pi1_command0_re <= csr_bankarray_interface3_bank_bus_we;
+	end
+end
+always @(*) begin
+	csr_bankarray_csrbank3_dfii_pi1_command0_we <= 1'd0;
+	if ((csr_bankarray_csrbank3_sel & (csr_bankarray_interface3_bank_bus_adr[8:0] == 4'd9))) begin
+		csr_bankarray_csrbank3_dfii_pi1_command0_we <= (~csr_bankarray_interface3_bank_bus_we);
 	end
 end
 assign basesoc_sdram_phaseinjector1_command_issue_r = csr_bankarray_interface3_bank_bus_dat_w[0];
@@ -13906,15 +13911,15 @@ always @(*) begin
 end
 assign csr_bankarray_csrbank3_dfii_pi1_address0_r = csr_bankarray_interface3_bank_bus_dat_w[14:0];
 always @(*) begin
-	csr_bankarray_csrbank3_dfii_pi1_address0_re <= 1'd0;
-	if ((csr_bankarray_csrbank3_sel & (csr_bankarray_interface3_bank_bus_adr[8:0] == 4'd11))) begin
-		csr_bankarray_csrbank3_dfii_pi1_address0_re <= csr_bankarray_interface3_bank_bus_we;
-	end
-end
-always @(*) begin
 	csr_bankarray_csrbank3_dfii_pi1_address0_we <= 1'd0;
 	if ((csr_bankarray_csrbank3_sel & (csr_bankarray_interface3_bank_bus_adr[8:0] == 4'd11))) begin
 		csr_bankarray_csrbank3_dfii_pi1_address0_we <= (~csr_bankarray_interface3_bank_bus_we);
+	end
+end
+always @(*) begin
+	csr_bankarray_csrbank3_dfii_pi1_address0_re <= 1'd0;
+	if ((csr_bankarray_csrbank3_sel & (csr_bankarray_interface3_bank_bus_adr[8:0] == 4'd11))) begin
+		csr_bankarray_csrbank3_dfii_pi1_address0_re <= csr_bankarray_interface3_bank_bus_we;
 	end
 end
 assign csr_bankarray_csrbank3_dfii_pi1_baddress0_r = csr_bankarray_interface3_bank_bus_dat_w[2:0];
@@ -13945,28 +13950,28 @@ always @(*) begin
 end
 assign csr_bankarray_csrbank3_dfii_pi1_wrdata0_r = csr_bankarray_interface3_bank_bus_dat_w[31:0];
 always @(*) begin
-	csr_bankarray_csrbank3_dfii_pi1_wrdata0_re <= 1'd0;
-	if ((csr_bankarray_csrbank3_sel & (csr_bankarray_interface3_bank_bus_adr[8:0] == 4'd14))) begin
-		csr_bankarray_csrbank3_dfii_pi1_wrdata0_re <= csr_bankarray_interface3_bank_bus_we;
-	end
-end
-always @(*) begin
 	csr_bankarray_csrbank3_dfii_pi1_wrdata0_we <= 1'd0;
 	if ((csr_bankarray_csrbank3_sel & (csr_bankarray_interface3_bank_bus_adr[8:0] == 4'd14))) begin
 		csr_bankarray_csrbank3_dfii_pi1_wrdata0_we <= (~csr_bankarray_interface3_bank_bus_we);
 	end
 end
-assign csr_bankarray_csrbank3_dfii_pi1_rddata1_r = csr_bankarray_interface3_bank_bus_dat_w[31:0];
 always @(*) begin
-	csr_bankarray_csrbank3_dfii_pi1_rddata1_we <= 1'd0;
-	if ((csr_bankarray_csrbank3_sel & (csr_bankarray_interface3_bank_bus_adr[8:0] == 4'd15))) begin
-		csr_bankarray_csrbank3_dfii_pi1_rddata1_we <= (~csr_bankarray_interface3_bank_bus_we);
+	csr_bankarray_csrbank3_dfii_pi1_wrdata0_re <= 1'd0;
+	if ((csr_bankarray_csrbank3_sel & (csr_bankarray_interface3_bank_bus_adr[8:0] == 4'd14))) begin
+		csr_bankarray_csrbank3_dfii_pi1_wrdata0_re <= csr_bankarray_interface3_bank_bus_we;
 	end
 end
+assign csr_bankarray_csrbank3_dfii_pi1_rddata1_r = csr_bankarray_interface3_bank_bus_dat_w[31:0];
 always @(*) begin
 	csr_bankarray_csrbank3_dfii_pi1_rddata1_re <= 1'd0;
 	if ((csr_bankarray_csrbank3_sel & (csr_bankarray_interface3_bank_bus_adr[8:0] == 4'd15))) begin
 		csr_bankarray_csrbank3_dfii_pi1_rddata1_re <= csr_bankarray_interface3_bank_bus_we;
+	end
+end
+always @(*) begin
+	csr_bankarray_csrbank3_dfii_pi1_rddata1_we <= 1'd0;
+	if ((csr_bankarray_csrbank3_sel & (csr_bankarray_interface3_bank_bus_adr[8:0] == 4'd15))) begin
+		csr_bankarray_csrbank3_dfii_pi1_rddata1_we <= (~csr_bankarray_interface3_bank_bus_we);
 	end
 end
 assign csr_bankarray_csrbank3_dfii_pi1_rddata0_r = csr_bankarray_interface3_bank_bus_dat_w[31:0];
@@ -14019,28 +14024,28 @@ always @(*) begin
 end
 assign csr_bankarray_csrbank4_reload0_r = csr_bankarray_interface4_bank_bus_dat_w[31:0];
 always @(*) begin
-	csr_bankarray_csrbank4_reload0_re <= 1'd0;
-	if ((csr_bankarray_csrbank4_sel & (csr_bankarray_interface4_bank_bus_adr[8:0] == 1'd1))) begin
-		csr_bankarray_csrbank4_reload0_re <= csr_bankarray_interface4_bank_bus_we;
-	end
-end
-always @(*) begin
 	csr_bankarray_csrbank4_reload0_we <= 1'd0;
 	if ((csr_bankarray_csrbank4_sel & (csr_bankarray_interface4_bank_bus_adr[8:0] == 1'd1))) begin
 		csr_bankarray_csrbank4_reload0_we <= (~csr_bankarray_interface4_bank_bus_we);
 	end
 end
-assign csr_bankarray_csrbank4_en0_r = csr_bankarray_interface4_bank_bus_dat_w[0];
 always @(*) begin
-	csr_bankarray_csrbank4_en0_we <= 1'd0;
-	if ((csr_bankarray_csrbank4_sel & (csr_bankarray_interface4_bank_bus_adr[8:0] == 2'd2))) begin
-		csr_bankarray_csrbank4_en0_we <= (~csr_bankarray_interface4_bank_bus_we);
+	csr_bankarray_csrbank4_reload0_re <= 1'd0;
+	if ((csr_bankarray_csrbank4_sel & (csr_bankarray_interface4_bank_bus_adr[8:0] == 1'd1))) begin
+		csr_bankarray_csrbank4_reload0_re <= csr_bankarray_interface4_bank_bus_we;
 	end
 end
+assign csr_bankarray_csrbank4_en0_r = csr_bankarray_interface4_bank_bus_dat_w[0];
 always @(*) begin
 	csr_bankarray_csrbank4_en0_re <= 1'd0;
 	if ((csr_bankarray_csrbank4_sel & (csr_bankarray_interface4_bank_bus_adr[8:0] == 2'd2))) begin
 		csr_bankarray_csrbank4_en0_re <= csr_bankarray_interface4_bank_bus_we;
+	end
+end
+always @(*) begin
+	csr_bankarray_csrbank4_en0_we <= 1'd0;
+	if ((csr_bankarray_csrbank4_sel & (csr_bankarray_interface4_bank_bus_adr[8:0] == 2'd2))) begin
+		csr_bankarray_csrbank4_en0_we <= (~csr_bankarray_interface4_bank_bus_we);
 	end
 end
 assign csr_bankarray_csrbank4_update_value0_r = csr_bankarray_interface4_bank_bus_dat_w[0];
@@ -14071,15 +14076,15 @@ always @(*) begin
 end
 assign csr_bankarray_csrbank4_ev_status_r = csr_bankarray_interface4_bank_bus_dat_w[0];
 always @(*) begin
-	csr_bankarray_csrbank4_ev_status_we <= 1'd0;
-	if ((csr_bankarray_csrbank4_sel & (csr_bankarray_interface4_bank_bus_adr[8:0] == 3'd5))) begin
-		csr_bankarray_csrbank4_ev_status_we <= (~csr_bankarray_interface4_bank_bus_we);
-	end
-end
-always @(*) begin
 	csr_bankarray_csrbank4_ev_status_re <= 1'd0;
 	if ((csr_bankarray_csrbank4_sel & (csr_bankarray_interface4_bank_bus_adr[8:0] == 3'd5))) begin
 		csr_bankarray_csrbank4_ev_status_re <= csr_bankarray_interface4_bank_bus_we;
+	end
+end
+always @(*) begin
+	csr_bankarray_csrbank4_ev_status_we <= 1'd0;
+	if ((csr_bankarray_csrbank4_sel & (csr_bankarray_interface4_bank_bus_adr[8:0] == 3'd5))) begin
+		csr_bankarray_csrbank4_ev_status_we <= (~csr_bankarray_interface4_bank_bus_we);
 	end
 end
 assign csr_bankarray_csrbank4_ev_pending_r = csr_bankarray_interface4_bank_bus_dat_w[0];
@@ -14097,15 +14102,15 @@ always @(*) begin
 end
 assign csr_bankarray_csrbank4_ev_enable0_r = csr_bankarray_interface4_bank_bus_dat_w[0];
 always @(*) begin
-	csr_bankarray_csrbank4_ev_enable0_re <= 1'd0;
-	if ((csr_bankarray_csrbank4_sel & (csr_bankarray_interface4_bank_bus_adr[8:0] == 3'd7))) begin
-		csr_bankarray_csrbank4_ev_enable0_re <= csr_bankarray_interface4_bank_bus_we;
-	end
-end
-always @(*) begin
 	csr_bankarray_csrbank4_ev_enable0_we <= 1'd0;
 	if ((csr_bankarray_csrbank4_sel & (csr_bankarray_interface4_bank_bus_adr[8:0] == 3'd7))) begin
 		csr_bankarray_csrbank4_ev_enable0_we <= (~csr_bankarray_interface4_bank_bus_we);
+	end
+end
+always @(*) begin
+	csr_bankarray_csrbank4_ev_enable0_re <= 1'd0;
+	if ((csr_bankarray_csrbank4_sel & (csr_bankarray_interface4_bank_bus_adr[8:0] == 3'd7))) begin
+		csr_bankarray_csrbank4_ev_enable0_re <= csr_bankarray_interface4_bank_bus_we;
 	end
 end
 assign csr_bankarray_csrbank4_load0_w = basesoc_timer_load_storage[31:0];
@@ -14125,15 +14130,15 @@ assign csr_bankarray_csrbank4_ev_enable0_w = basesoc_timer_enable_storage;
 assign csr_bankarray_csrbank5_sel = (csr_bankarray_interface5_bank_bus_adr[13:9] == 3'd6);
 assign basesoc_cdcusb_rxtx_r = csr_bankarray_interface5_bank_bus_dat_w[7:0];
 always @(*) begin
-	basesoc_cdcusb_rxtx_we <= 1'd0;
-	if ((csr_bankarray_csrbank5_sel & (csr_bankarray_interface5_bank_bus_adr[8:0] == 1'd0))) begin
-		basesoc_cdcusb_rxtx_we <= (~csr_bankarray_interface5_bank_bus_we);
-	end
-end
-always @(*) begin
 	basesoc_cdcusb_rxtx_re <= 1'd0;
 	if ((csr_bankarray_csrbank5_sel & (csr_bankarray_interface5_bank_bus_adr[8:0] == 1'd0))) begin
 		basesoc_cdcusb_rxtx_re <= csr_bankarray_interface5_bank_bus_we;
+	end
+end
+always @(*) begin
+	basesoc_cdcusb_rxtx_we <= 1'd0;
+	if ((csr_bankarray_csrbank5_sel & (csr_bankarray_interface5_bank_bus_adr[8:0] == 1'd0))) begin
+		basesoc_cdcusb_rxtx_we <= (~csr_bankarray_interface5_bank_bus_we);
 	end
 end
 assign csr_bankarray_csrbank5_txfull_r = csr_bankarray_interface5_bank_bus_dat_w[0];
@@ -14151,15 +14156,15 @@ always @(*) begin
 end
 assign csr_bankarray_csrbank5_rxempty_r = csr_bankarray_interface5_bank_bus_dat_w[0];
 always @(*) begin
-	csr_bankarray_csrbank5_rxempty_we <= 1'd0;
-	if ((csr_bankarray_csrbank5_sel & (csr_bankarray_interface5_bank_bus_adr[8:0] == 2'd2))) begin
-		csr_bankarray_csrbank5_rxempty_we <= (~csr_bankarray_interface5_bank_bus_we);
-	end
-end
-always @(*) begin
 	csr_bankarray_csrbank5_rxempty_re <= 1'd0;
 	if ((csr_bankarray_csrbank5_sel & (csr_bankarray_interface5_bank_bus_adr[8:0] == 2'd2))) begin
 		csr_bankarray_csrbank5_rxempty_re <= csr_bankarray_interface5_bank_bus_we;
+	end
+end
+always @(*) begin
+	csr_bankarray_csrbank5_rxempty_we <= 1'd0;
+	if ((csr_bankarray_csrbank5_sel & (csr_bankarray_interface5_bank_bus_adr[8:0] == 2'd2))) begin
+		csr_bankarray_csrbank5_rxempty_we <= (~csr_bankarray_interface5_bank_bus_we);
 	end
 end
 assign csr_bankarray_csrbank5_ev_status_r = csr_bankarray_interface5_bank_bus_dat_w[1:0];
@@ -14177,28 +14182,28 @@ always @(*) begin
 end
 assign csr_bankarray_csrbank5_ev_pending_r = csr_bankarray_interface5_bank_bus_dat_w[1:0];
 always @(*) begin
-	csr_bankarray_csrbank5_ev_pending_re <= 1'd0;
-	if ((csr_bankarray_csrbank5_sel & (csr_bankarray_interface5_bank_bus_adr[8:0] == 3'd4))) begin
-		csr_bankarray_csrbank5_ev_pending_re <= csr_bankarray_interface5_bank_bus_we;
-	end
-end
-always @(*) begin
 	csr_bankarray_csrbank5_ev_pending_we <= 1'd0;
 	if ((csr_bankarray_csrbank5_sel & (csr_bankarray_interface5_bank_bus_adr[8:0] == 3'd4))) begin
 		csr_bankarray_csrbank5_ev_pending_we <= (~csr_bankarray_interface5_bank_bus_we);
 	end
 end
-assign csr_bankarray_csrbank5_ev_enable0_r = csr_bankarray_interface5_bank_bus_dat_w[1:0];
 always @(*) begin
-	csr_bankarray_csrbank5_ev_enable0_we <= 1'd0;
-	if ((csr_bankarray_csrbank5_sel & (csr_bankarray_interface5_bank_bus_adr[8:0] == 3'd5))) begin
-		csr_bankarray_csrbank5_ev_enable0_we <= (~csr_bankarray_interface5_bank_bus_we);
+	csr_bankarray_csrbank5_ev_pending_re <= 1'd0;
+	if ((csr_bankarray_csrbank5_sel & (csr_bankarray_interface5_bank_bus_adr[8:0] == 3'd4))) begin
+		csr_bankarray_csrbank5_ev_pending_re <= csr_bankarray_interface5_bank_bus_we;
 	end
 end
+assign csr_bankarray_csrbank5_ev_enable0_r = csr_bankarray_interface5_bank_bus_dat_w[1:0];
 always @(*) begin
 	csr_bankarray_csrbank5_ev_enable0_re <= 1'd0;
 	if ((csr_bankarray_csrbank5_sel & (csr_bankarray_interface5_bank_bus_adr[8:0] == 3'd5))) begin
 		csr_bankarray_csrbank5_ev_enable0_re <= csr_bankarray_interface5_bank_bus_we;
+	end
+end
+always @(*) begin
+	csr_bankarray_csrbank5_ev_enable0_we <= 1'd0;
+	if ((csr_bankarray_csrbank5_sel & (csr_bankarray_interface5_bank_bus_adr[8:0] == 3'd5))) begin
+		csr_bankarray_csrbank5_ev_enable0_we <= (~csr_bankarray_interface5_bank_bus_we);
 	end
 end
 assign csr_bankarray_csrbank5_tuning_word0_r = csr_bankarray_interface5_bank_bus_dat_w[31:0];
@@ -18446,10 +18451,10 @@ end
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
-// Memory mem: 32768-words x 32-bit
+// Memory mem: 6317-words x 32-bit
 //------------------------------------------------------------------------------
 // Port 0 | Read: Sync  | Write: ---- | 
-reg [31:0] mem[0:32767];
+reg [31:0] mem[0:6316];
 initial begin
 	$readmemh("mem.init", mem);
 end
@@ -18655,8 +18660,6 @@ end
 assign basesoc_cdcusb_asyncfifo1_wrport_dat_r = storage_6_dat0;
 assign basesoc_cdcusb_asyncfifo1_rdport_dat_r = storage_6_dat1;
 
-
-
 //------------------------------------------------------------------------------
 // Memory storage_7: 8-words x 25-bit
 //------------------------------------------------------------------------------
@@ -18824,6 +18827,7 @@ Riskv Riskv(
 	.iBusWishbone_ACK(basesoc_ibus_ack),
 	.iBusWishbone_DAT_MISO(basesoc_ibus_dat_r),
 	.iBusWishbone_ERR(basesoc_ibus_err),
+	.interrupts(basesoc_interrupt),
 	.reset((sys_rst | basesoc_reset)),
 	.dBusWishbone_ADR(basesoc_dbus_adr),
 	.dBusWishbone_CYC(basesoc_dbus_cyc),
@@ -18847,7 +18851,6 @@ always @(posedge sys_clk) begin
 		$finish;
 	end
 end
-
 
 //------------------------------------------------------------------------------
 // Memory data_mem_grain0: 512-words x 8-bit
@@ -19076,5 +19079,5 @@ assign basesoc_data_port_dat_r[127:120] = data_mem_grain15[data_mem_grain15_adr0
 endmodule
 
 // -----------------------------------------------------------------------------
-//  Auto-Generated by LiteX on 2021-11-22 15:46:22.
+//  Auto-Generated by LiteX on 2021-11-27 00:27:37.
 //------------------------------------------------------------------------------
