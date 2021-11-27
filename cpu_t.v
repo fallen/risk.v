@@ -20,6 +20,7 @@ wire        mem_d_rbusy = 0;
 wire        mem_d_wbusy = 0;
 
 wire [31:0] reset_pc = 32'b0;
+reg  [31:0] interrupts = 32'b0;
 
 rv32i cpu (rst, clk,
 	   mem_i_addr,
@@ -34,7 +35,8 @@ rv32i cpu (rst, clk,
 	   mem_d_rdata,
 	   mem_d_rbusy,
 	   mem_d_wbusy,
-	   reset_pc);
+	   reset_pc,
+	   interrupts);
 
 ram rom(rst, clk,
 	mem_i_addr,

@@ -18,7 +18,8 @@ module Riskv (input clk,
 	    input dBusWishbone_ACK,
 	    input dBusWishbone_ERR,
 
-	    input [31:0] externalResetVector
+	    input [31:0] externalResetVector,
+	    input [31:0] interrupts
 );
 
 wire [31:0] mem_i_addr;
@@ -58,6 +59,10 @@ assign dBusWishbone_DAT_MOSI = mem_d_wdata;
 assign dBusWishbone_SEL = mem_d_wmask;
 assign dBusWishbone_ADR = mem_d_addr[31:2];
 
+always @(posedge clk) begin
+	if (dBusWishbone_ADR == ($unsigned(32'h82003000) >> 2) && dBusWishbone_WE && dBusWishbone_STB && dBusWishbone_CYC && dBusWishbone_ACK)
+		$write("%c", dBusWishbone_DAT_MOSI & 8'hff);
+end
 
 rv32i cpu(reset, clk,
 	  mem_i_addr,
@@ -72,6 +77,7 @@ rv32i cpu(reset, clk,
 	  mem_d_rdata,
 	  mem_d_rbusy,
 	  mem_d_wbusy,
-	  externalResetVector);
+	  externalResetVector,
+	  interrupts);
 
 endmodule

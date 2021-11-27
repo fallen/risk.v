@@ -1,4 +1,5 @@
 `include "rv32i.vh"
+`include "settings.vh"
 module rv32i(
 input         rst,
 input         clk,
@@ -14,8 +15,10 @@ output        mem_d_rstrb,
 input  [31:0] mem_d_rdata,
 input         mem_d_rbusy,
 input         mem_d_wbusy,
-input  [31:0] externalResetVector
+input  [31:0] externalResetVector,
+input  [31:0] interrupts
 );
+
 reg [31:0] regfile [0:31];
 reg [31:0] pc;
 reg [63:0] csr_cycle;
@@ -63,7 +66,9 @@ assign f_insn = mem_i_rdata;
 assign pipeline_freeze = mem_d_rbusy | mem_d_wbusy | mem_i_rbusy;
 
 always @(posedge clk) begin if (f_en) begin
+`ifdef RISKV_DEBUG
 	$display("fetching pc = %x", pc);
+`endif
 	f_addr <= pc;
 end end
 
@@ -90,6 +95,25 @@ reg [11:0]  d_csr;
 reg         d_csr_rd, d_csr_wr;
 reg [31:0]  d_csr_val;
 reg [4:0]   d_rd;
+reg	    d_do_mret;
+
+wire csr_mip_meip = |interrupts;
+wire csr_mip_seip = 0;
+wire csr_mip_ueip = 0;
+wire csr_mip_mtip = 0; // no timer so far
+wire csr_mip_stip = 0;
+wire csr_mip_utip = 0;
+wire csr_mip_msip = 0; // no software interrupt so far
+wire csr_mip_ssip = 0;
+wire csr_mip_usip = 0;
+wire [31:0] csr_mip_read_value = {12'b0, csr_mip_meip, 1'b0, csr_mip_seip,
+				  csr_mip_ueip, csr_mip_mtip, 1'b0, csr_mip_stip,
+				  csr_mip_utip, csr_mip_msip, 1'b0, csr_mip_ssip,
+				  csr_mip_usip};
+
+wire csr_mie_meie = csr_mie[11];
+
+wire ext_irq_en = csr_mip_meip & csr_mie_meie;
 
 wire [31:0] csr_val =
 	    (csr_w == `CSR_RDCYCLE) ? csr_cycle[31:0] :
@@ -103,10 +127,13 @@ wire [31:0] csr_val =
 	    (csr_w == `CSR_MIMPID) ? csr_mimpid :
 	    (csr_w == `CSR_MHARTID) ? csr_mhartid :
 	    (csr_w == `CSR_MSCRATCH) ? csr_mscratch :
+	    (csr_w == `CSR_MSTATUS) ? csr_mstatus :
 	    (csr_w == `CSR_MEPC) ? csr_mepc :
 	    (csr_w == `CSR_MCAUSE) ? csr_mcause :
 	    (csr_w == `CSR_MTVAL) ? csr_mtval :
-	    (csr_w == `CSR_MIP) ? csr_mip :
+	    (csr_w == `CSR_MTVEC) ? csr_mtvec :
+	    (csr_w == `CSR_MIE) ? csr_mie :
+	    (csr_w == `CSR_MIP) ? csr_mip_read_value :
 	    0;
 
 always @(posedge clk) begin if (d_en) begin
@@ -184,11 +211,15 @@ always @(posedge clk) begin if (d_en) begin
 	if (opcode_w == `OP_SYSTEM) begin
 		if ({rs1_w,funct3_w,rd_w} == 0) begin
 			case (f_insn[31:20])
-			12'b000000000000: $display("ECALL  @%x", f_addr);
+			12'b000000000000: begin
+`ifdef RISKV_DEBUG
+				$display("ECALL  @%x", f_addr);
+`endif
+			end
 			12'b000000000001: $display("EBREAK @%x", f_addr);
 			12'b000000000010: $display("URET   @%x", f_addr);
 			12'b000100000010: $display("SRET   @%x", f_addr);
-			12'b001100000010: $display("MRET   @%x", f_addr);
+			12'b001100000010: begin $display("MRET   @%x", f_addr); d_do_mret <= 1; end
 			12'b000100000101: $display("WFI    @%x", f_addr);
 			default: $display("illegal insn @%x", f_addr);
 			endcase
@@ -294,7 +325,9 @@ assign lsu_out_half = mem_d_addr[1] ? lsu_out[31:16] : lsu_out[15:0];
 
 always @(posedge clk) begin if (m_en) begin
 	if (x_store) begin
+`ifdef RISKV_DEBUG
 		$display("store @%x: %x", x_out, x_lsu_val);
+`endif
 	end
 	if (x_csr_rd) begin
 		m_out <= x_csr_val;
@@ -315,7 +348,9 @@ end end
 
 always @(posedge clk) begin if (w_en) begin
 	if (m_rd != 0 && m_load) begin
+`ifdef RISKV_DEBUG
 		$display("load  @%x: %x", m_out, lsu_out);
+`endif
 		case (m_lsu_op)
 		`LSU_LB:	regfile[m_rd] <= $signed(lsu_out_byte);
 		`LSU_LH:	regfile[m_rd] <= $signed(lsu_out_half);
@@ -330,14 +365,31 @@ always @(posedge clk) begin if (w_en) begin
 	if (m_csr_wr) begin
 		case (m_csr)
 		`CSR_MSCRATCH:	csr_mscratch <= m_csr_val;
+		`CSR_MSTATUS:	csr_mstatus  <= m_csr_val;
 		`CSR_MEPC:	csr_mepc     <= m_csr_val;
 		`CSR_MCAUSE:	csr_mcause   <= m_csr_val;
 		`CSR_MTVAL:	csr_mtval    <= m_csr_val;
+		`CSR_MIE:	csr_mie      <= m_csr_val;
 		`CSR_MIP:	csr_mip      <= m_csr_val;
+		`CSR_MTVEC:	csr_mtvec    <= m_csr_val;
 		endcase
 	end
-	if (m_taken) begin
+	if (ext_irq_en) begin
+`ifdef RISKV_DEBUG
+		$display("ext_irq, branching to %x", csr_mtvec);
+`endif
+		pc <= csr_mtvec;
+		csr_mepc <= d_addr;
+		csr_mcause <= {1'b1, 31'd11};
+	end else if (d_do_mret) begin
+`ifdef RISKV_DEBUG
+		$display("mret to %x", csr_mepc);
+`endif
+		pc <= csr_mepc;
+	end else if (m_taken) begin
+`ifdef RISKV_DEBUG
 		$display("branch taken to %x", m_out);
+`endif
 		pc <= m_out;
 	end else begin
 		pc <= m_npc;
@@ -379,7 +431,7 @@ always @(posedge clk) begin
 		csr_mimpid <= 0;
 		csr_mhartid <= 0;
 		csr_mstatus <= 0;
-		csr_misa <= 0;
+		csr_misa <= 32'b01_000_00000000000000000000000001;
 		csr_medeleg <= 0;
 		csr_mideleg <= 0;
 		csr_mie <= 0;
@@ -390,6 +442,7 @@ always @(posedge clk) begin
 		csr_mcause <= 0;
 		csr_mtval <= 0;
 		csr_mip <= 0;
+		d_do_mret <= 0;
 	end else begin
 		csr_cycle <= csr_cycle + 1;
 	end
